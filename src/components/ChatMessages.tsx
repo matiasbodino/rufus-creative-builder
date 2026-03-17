@@ -56,7 +56,22 @@ export default function ChatMessages({
                       <div className="rounded-3xl rounded-br-lg px-4 py-2.5 bg-[var(--user-bubble)] text-[var(--user-bubble-text)]">
                         <div className="whitespace-pre-wrap text-sm leading-relaxed">
                           {msg.attachment
-                            ? msg.content.replace(/\[Archivo adjunto:[^\]]*\]\n*[\s\S]*?\n\n/g, "").trim() || "Archivo adjunto enviado"
+                            ? (() => {
+                                // Extract only the user's typed text (after the file content)
+                                const parts = msg.content.split(`[Archivo adjunto: ${msg.attachment}]`);
+                                if (parts.length > 1) {
+                                  // The user text is the last part after file content
+                                  const fileAndUserText = parts[1];
+                                  // Find the user's text: it's after the extracted file content
+                                  // Format: \n\n{file content}\n\n{user text}
+                                  const lastDoubleNewline = fileAndUserText.lastIndexOf("\n\n");
+                                  if (lastDoubleNewline > 0) {
+                                    const userText = fileAndUserText.slice(lastDoubleNewline + 2).trim();
+                                    return userText || "📎 Archivo adjunto enviado";
+                                  }
+                                }
+                                return "📎 Archivo adjunto enviado";
+                              })()
                             : msg.content}
                         </div>
                       </div>

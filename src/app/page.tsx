@@ -154,20 +154,26 @@ export default function Home() {
     const text = input.trim();
     if (!text && !attachedFile) return;
 
-    let content = text;
+    // Separate display content from API content
+    let displayContent = text || "📎 Archivo adjunto enviado";
+    let apiContent = text;
     let attachment: string | undefined;
     if (attachedFile) {
-      content = `[Archivo adjunto: ${attachedFile.name}]\n\n${attachedFile.text}${text ? `\n\n${text}` : ""}`;
+      apiContent = `[Archivo adjunto: ${attachedFile.name}]\n\n${attachedFile.text}${text ? `\n\n${text}` : ""}`;
       attachment = attachedFile.name;
     }
 
     const userMsg: (typeof messages)[number] = {
       role: "user",
-      content,
+      content: displayContent,
       attachment,
     };
 
+    // For API, we need the full content with file text
+    const apiMsg = { role: "user" as const, content: apiContent };
+
     const newMessages = [...messages, userMsg];
+    const apiMessages = [...messages, apiMsg];
     setMessages(newMessages);
     setInput("");
     setAttachedFile(null);
@@ -196,7 +202,7 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: apiMessages }),
       });
       const data = await res.json();
 
