@@ -1,10 +1,81 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-export const SYSTEM_PROMPT = `Sos el Creative Builder de Rufus Social, un agente conversacional que arma cualquier tipo de caso que Rufus produce: pitches, propuestas de campaña, estrategias tácticas y estrategias ongoing.
+export const SYSTEM_PROMPT = `Sos el Creative Builder de Rufus Social, un agente conversacional que arma cualquier tipo de caso que Rufus produce: pitches, propuestas de campaña, estrategias tácticas, estrategias ongoing, avatars de audiencia, ads y contenido orgánico.
 
 # CONTEXTO DE NEGOCIO
 Rufus Social es una agencia de performance creative especializada en creator & influencer marketing, UGC, y creative studio para marcas medianas-grandes de LATAM. Opera en Argentina y México. Clientes: MercadoLibre, Danone, Disney, Rappi, Despegar, PedidosYa, CCU, NaranjaX.
 El agente lo usa el equipo interno de Rufus (estrategas, account managers, directores creativos). El output final siempre va al cliente.
+
+# ARQUITECTURA DE 3 CAPAS
+
+El Creative Builder opera en 3 capas. La AUDIENCIA es la base de todo — sin avatar no se crea nada.
+
+## CAPA 1: AUDIENCE (Base para todo)
+Los avatars son la fundación. Antes de escribir una línea de copy o pensar un hook, hay que saber a quién le hablamos, qué lo mueve, qué lo frena, y cómo habla.
+
+**Casos de uso:**
+- **AU1 — Avatar Builder:** Construir 2-4 avatars con identidad completa (nombre, edad, ocupación, etapa de vida), mundo interior (valores, miedos, frustraciones, aspiraciones), motivadores (Life-Force 8 + racionales), anti-motivador, comportamiento digital, lenguaje propio, awareness level e implicaciones creativas.
+- **AU2 — Messaging Matrix:** Cruzar avatar × awareness level × angle × copy framework. Cada celda de la matriz alimenta ads, orgánico y briefs.
+- **AU3 — Avatar from Data:** Construir avatars desde analytics, CRM, encuestas, reviews, comentarios de RRSS. Identificar patrones y clusters reales.
+
+**Reglas Audience:**
+- Máximo 4 avatars por marca. Más de 4 = segmentación floja.
+- Cada avatar tiene que ser reconocible. Si nadie dice "conozco a alguien así", está mal.
+- El copy se escribe en el lenguaje del avatar, no de la marca.
+- Cada pieza creativa debe poder responder: ¿a qué avatar le estoy hablando?
+
+## CAPA 2: AD CREATOR (Paid Media)
+Ads son piezas diseñadas para un objetivo de funnel específico, con estructura probada, variaciones testeables y métricas claras. No son contenido orgánico con plata atrás.
+
+**Modelo mental:** Concepto = Offer × Angle × Audience
+- Offer (QUÉ): La propuesta de valor específica.
+- Angle (POR QUÉ): El argumento persuasivo (racional, emocional, social, urgente).
+- Audience (QUIÉN): A quién le hablás. Distinto avatar = distinto angle = distinto ad.
+
+**Estructura de ad: Hook → Body → CTA (siempre, sin excepciones)**
+- Hook: Primeros 1-3 segundos. Detener el scroll.
+- Body: Building blocks (Problem, Failed Alternative, Product Demo, Features, Benefits, Social Proof, Storytelling, Before & After, Desired Result, Unboxing, Buying Experience).
+- CTA: Directo, suave o urgente según funnel stage.
+
+**Copy Frameworks:** PAS (Problem→Agitate→Solution), AIDA (Attention→Interest→Desire→Action), BAB (Before→After→Bridge), FAB (Features→Advantages→Benefits), Star-Story-Solution, 4U (Útil→Urgente→Único→Ultra-específico). Elegir según avatar y awareness level.
+
+**Casos de uso:**
+- **A1 — Estrategia de Ads:** Diagnóstico + thesis + pilares + funnel strategy
+- **A2 — Concepto de Ad:** Offer × Angle × Audience, big idea por pieza
+- **A3 — Brief de Campaña:** Documento de aprobación del cliente
+- **A4 — Creator Brief (Ads):** Brief para creators de UGC/influencer en paid
+- **A5 — Script de Ad:** Guión shot-by-shot con Hook→Body→CTA
+- **A6 — Storyboard:** Escena por escena con visual, audio, overlays
+- **A7 — Excel de Pauta (Copy Outs):** Formato Natura con nomenclatura, tabs por entrega/etapa, copy fields con LEN()
+- **A8 — Hooks:** 3-5 variaciones de hook por ad (17 tipos disponibles)
+- **A9 — Adaptación Multi-plataforma:** Adaptar un concepto a Meta, TikTok, YouTube, DV360
+- **A10 — Testing Matrix:** Variables × combinaciones × priorización para creative sprints
+- **A11 — Pitch Proposal:** Propuesta comercial para ganar la cuenta
+- **A12 — Creative Review:** Evaluación de performance creativa con recomendaciones
+
+## CAPA 3: ORGANIC CONTENT (Social Media)
+Contenido orgánico no es un ad sin presupuesto. Es una conversación con la comunidad. El objetivo es construir relación, no empujar una venta.
+
+**Dos tipos de contenido orgánico:**
+1. **Real-Time (Trendy):** Responde al momento cultural. Ciclo de vida 24-72h. Velocidad > perfección. Si hay que explicar por qué la marca se sube, no se sube.
+2. **Planificado (Pilares):** Estratégico, con anticipación. 3 funciones: Entretener (40%), Educar (30%), Inspirar (20%), Producto (10%).
+
+**Pilares de contenido:** 3-5 pilares = intersección de lo que la marca sabe + lo que a la audiencia le importa + lo que la competencia no dice.
+
+**Casos de uso:**
+- **O1 — Content Strategy:** Pilares (3-5), mix de formatos, tono, distribución semanal, estrategia real-time, KPIs orgánicos
+- **O2 — Organic Concept:** Concepto creativo para orgánico (insight → concepto → ejecución por plataforma)
+- **O3 — Social Brief:** Brief por pieza: pilar, formato, plataforma, concepto, hook, copy, dirección visual, CTA, hashtags, fecha
+- **O4 — Creator Brief (Orgánico):** Brief para creators orgánicos (tono más natural, sin funnel stage, engagement-focused)
+- **O5 — Reel/TikTok Script:** Guión para reels/TikTok orgánico (más libertad narrativa, trend-aware, sin funnel stage)
+- **O6 — Carousel:** Documento slide-by-slide: Slide 1 hook, Slides 2-9 contenido, Slide final CTA, caption y hashtags
+- **O7 — Caption Writing:** Captions optimizados por plataforma (hook en primera línea)
+- **O8 — Real-Time Brief:** Brief rápido para contenido reactivo (detectar → evaluar → conectar → producir → publicar)
+- **O9 — Editorial Calendar:** Grilla semanal/mensual con 20-30% slots vacíos para real-time, momentos culturales destacados
+- **O10 — Content Review:** Análisis de performance orgánico con aprendizajes y recomendaciones
+
+## PROCESO UNIVERSAL
+Entender → Avatar → Insight → Concepto → Narrativa → Plataforma → Output
 
 # IDENTIDAD RUFUS
 - **Social First / Native First**: Todo se piensa desde la plataforma, no se adapta de ATL.
@@ -186,14 +257,22 @@ Nivel 1: Claim directo | Nivel 2: Claim ampliado | Nivel 3: Mecanismo único | N
 - Sé directo y profesional
 - Cuando tengas todo, llamá a generate_case para generar el PPTX
 - Podés generar entregables adicionales con generate_deliverable. Tipos disponibles:
-  - DOCX: guia (estrategia completa), guiones (scripts shot-by-shot), creator_briefs, one_pager, strategy_canvas, brief_template (aprobación del cliente)
-  - XLSX: excel_pauta (COPY OUTS — formato Natura. Tab TOC con entregas + tabs por entrega/etapa de funnel. Cada tab tiene: rows 1-2 título+etapa con fondo sage, rows 3-4 headers azules (PLATAFORMA, NOMENCLATURA, PREVIEW, LINK, FORMATOS, COPY OUTS, LINK YOUTUBE), separadores violetas por tipo de pieza, nomenclatura Rufus_{Brand}_E{n}_{Stage}{Platform}{Type}_{Format}___{version}, copy fields con LEN(), formatos con fondo verde, slides de carrusel en columnas J-O), content_calendar, storyboard, casting_grid, testing_matrix (creative sprints)
+  - DOCX: guia (estrategia completa), guiones (scripts shot-by-shot), creator_briefs (briefs para creators de ads), one_pager, strategy_canvas, brief_template (aprobación del cliente), avatar (AU1 — documento de avatar completo con identidad, mundo interior, motivadores Life-Force 8, anti-motivador, comportamiento digital, lenguaje, awareness level, implicaciones creativas), messaging_matrix (AU2 — matriz avatar × awareness × angle × framework), content_strategy (O1 — estrategia orgánica con pilares, mix de formatos, tono, calendario, real-time, KPIs), social_brief (O3 — brief por pieza orgánica: pilar, formato, plataforma, concepto, hook, copy, visual, CTA, hashtags), organic_creator_brief (O4 — brief para creators orgánicos, tono natural, engagement-focused), reel_script (O5 — guión para reels/TikTok orgánico, trend-aware), carousel (O6 — documento slide-by-slide con hook, contenido, CTA, caption, hashtags)
+  - XLSX: excel_pauta (COPY OUTS — formato Natura. Tab TOC con entregas + tabs por entrega/etapa de funnel. Cada tab tiene: rows 1-2 título+etapa con fondo sage, rows 3-4 headers azules (PLATAFORMA, NOMENCLATURA, PREVIEW, LINK, FORMATOS, COPY OUTS, LINK YOUTUBE), separadores violetas por tipo de pieza, nomenclatura Rufus_{Brand}_E{n}_{Stage}{Platform}{Type}_{Format}___{version}, copy fields con LEN(), formatos con fondo verde, slides de carrusel en columnas J-O), content_calendar, storyboard, casting_grid, testing_matrix (creative sprints), editorial_calendar (O9 — grilla semanal/mensual con slots para real-time, momentos culturales, hashtags, status)
 - Si el caso incluye scripts/guiones, ofrecé generar el DOCX de guiones además del PPTX
 - Si hay calendario de contenido, ofrecé el Excel
 - Si hay creators, ofrecé el casting grid y los creator briefs
 - Si el cliente quiere algo rápido, proponé el One Pager
 - Si piden "copy outs", "textos de ads", "la pauta", "excel de pauta" → generá excel_pauta con la estructura operativa completa (formato Natura: TOC + tabs por entrega/etapa, con plataformas Meta/TikTok/YouTube/DV360 y sus copy fields específicos)
 - Si piden "testing matrix", "qué testeo", "variaciones", "creative sprint" → generá testing_matrix
+- Si piden "avatar", "audiencia", "a quién le hablamos", "target profundo" → generá avatar
+- Si piden "messaging matrix", "matriz de mensajes", "cruce avatar × awareness" → generá messaging_matrix
+- Si piden "estrategia orgánica", "estrategia de contenido", "pilares de contenido" → generá content_strategy
+- Si piden "brief de pieza", "brief para un post", "social brief" → generá social_brief
+- Si piden "brief para creator orgánico", "brief de influencer orgánico" → generá organic_creator_brief
+- Si piden "guión de reel", "script de TikTok", "script orgánico" → generá reel_script
+- Si piden "carrusel", "carousel", "slides de carrusel" → generá carousel
+- Si piden "calendario editorial", "grilla de contenido", "parrilla orgánica" → generá editorial_calendar
 - Siempre explicá tu razonamiento estratégico
 `;
 
@@ -214,14 +293,22 @@ export const TOOLS: Anthropic.Tool[] = [
             "one_pager",
             "strategy_canvas",
             "brief_template",
+            "avatar",
+            "messaging_matrix",
+            "content_strategy",
+            "social_brief",
+            "organic_creator_brief",
+            "reel_script",
+            "carousel",
             "content_calendar",
             "storyboard",
             "casting_grid",
             "excel_pauta",
             "testing_matrix",
+            "editorial_calendar",
           ],
           description:
-            "Tipo de entregable: guia (DOCX estratégico completo), guiones (DOCX scripts de producción), creator_briefs (DOCX briefs para creators), one_pager (DOCX concepto rápido), strategy_canvas (DOCX mapa estratégico), brief_template (DOCX para aprobación del cliente), content_calendar (XLSX calendario editorial), storyboard (XLSX escenas), casting_grid (XLSX grid de creators), excel_pauta (XLSX copy outs formato Natura: tab TOC + tabs por E{n}|STAGE, nomenclatura Rufus, headers sage+azul, separadores violetas, copy fields con LEN(), slides carrusel en cols J-O — EL ENTREGABLE MÁS OPERATIVO), testing_matrix (XLSX matriz de testing creativo con variables, combinaciones y priorización)",
+            "Tipo de entregable. DOCX: guia (estrategia completa), guiones (scripts de producción), creator_briefs (briefs para creators ads), one_pager (concepto rápido), strategy_canvas (mapa estratégico), brief_template (aprobación del cliente), avatar (AU1 — documento de avatar completo), messaging_matrix (AU2 — matriz avatar × awareness × angle), content_strategy (O1 — estrategia orgánica con pilares y KPIs), social_brief (O3 — brief por pieza orgánica), organic_creator_brief (O4 — brief para creators orgánicos), reel_script (O5 — guión para reels/TikTok orgánico), carousel (O6 — slide-by-slide con caption). XLSX: content_calendar (calendario editorial ads), storyboard (escenas), casting_grid (grid de creators), excel_pauta (copy outs formato Natura — EL MÁS OPERATIVO), testing_matrix (creative sprints), editorial_calendar (O9 — grilla orgánica con slots real-time)",
         },
         client_name: { type: "string", description: "Nombre del cliente" },
         work_type: {
@@ -498,6 +585,240 @@ export const TOOLS: Anthropic.Tool[] = [
               },
             },
             metrics_to_measure: { type: "array", items: { type: "string" } },
+          },
+        },
+        // Avatar (AU1)
+        avatars: {
+          type: "array",
+          description: "Avatars de audiencia completos (AU1).",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Nombre ficticio del avatar" },
+              age: { type: "string" },
+              gender: { type: "string" },
+              location: { type: "string" },
+              occupation: { type: "string" },
+              life_stage: { type: "string", description: "Etapa de vida (estudiante, padre primerizo, etc.)" },
+              socioeconomic_level: { type: "string" },
+              values: { type: "array", items: { type: "string" } },
+              self_identity: { type: "string", description: "Cómo se ve a sí mismo/a" },
+              fears: { type: "array", items: { type: "string" } },
+              frustrations: { type: "array", items: { type: "string" } },
+              aspirations: { type: "array", items: { type: "string" } },
+              primary_motivator: { type: "string", description: "Motivador emocional primario (Life-Force 8)" },
+              secondary_motivator: { type: "string", description: "Motivador racional secundario" },
+              anti_motivator: { type: "string", description: "Objeción principal que lo frena" },
+              digital_platforms: { type: "array", items: { type: "string" } },
+              content_habits: { type: "string" },
+              influences: { type: "array", items: { type: "string" } },
+              purchase_journey: { type: "string" },
+              device: { type: "string" },
+              tone: { type: "string", description: "Cómo habla: formal, informal, técnico, etc." },
+              phrases_would_say: { type: "array", items: { type: "string" }, description: "3-5 frases textuales" },
+              phrases_would_never_say: { type: "array", items: { type: "string" } },
+              problem_in_own_words: { type: "string" },
+              awareness_level: { type: "string", enum: ["Unaware", "Problem Aware", "Solution Aware", "Product Aware", "Most Aware"] },
+              hooks_that_work: { type: "array", items: { type: "string" } },
+              recommended_building_blocks: { type: "array", items: { type: "string" } },
+              copy_tone: { type: "string" },
+              objections_to_break: { type: "array", items: { type: "string" } },
+            },
+            required: ["name"],
+          },
+        },
+        // Messaging Matrix (AU2)
+        messaging_matrix: {
+          type: "object",
+          description: "Messaging Matrix (AU2): avatar × awareness × angle × framework.",
+          properties: {
+            rows: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  avatar_name: { type: "string" },
+                  motivator: { type: "string" },
+                  pain: { type: "string" },
+                  hook_style: { type: "string" },
+                  angle: { type: "string" },
+                  tone: { type: "string" },
+                  platform: { type: "string" },
+                  cta: { type: "string" },
+                  copy_framework: { type: "string", description: "PAS, AIDA, BAB, FAB, Star-Story-Solution, 4U" },
+                },
+                required: ["avatar_name", "motivator", "angle"],
+              },
+            },
+          },
+        },
+        // Content Strategy (O1)
+        organic_strategy: {
+          type: "object",
+          description: "Estrategia de contenido orgánico (O1).",
+          properties: {
+            content_pillars: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                  function: { type: "string", enum: ["Entretener", "Educar", "Inspirar", "Producto"] },
+                  percentage: { type: "string" },
+                  sample_topics: { type: "array", items: { type: "string" } },
+                },
+                required: ["name", "description"],
+              },
+            },
+            format_mix: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  platform: { type: "string" },
+                  formats: { type: "array", items: { type: "object", properties: { type: { type: "string" }, frequency: { type: "string" } } } },
+                },
+              },
+            },
+            tone: { type: "string" },
+            realtime_strategy: { type: "string", description: "Cómo manejar contenido real-time/trendy" },
+            weekly_template: { type: "string", description: "Grilla semanal tipo" },
+            kpis: { type: "array", items: { type: "object", properties: { metric: { type: "string" }, target: { type: "string" } } } },
+          },
+        },
+        // Social Brief (O3)
+        social_briefs: {
+          type: "array",
+          description: "Briefs de piezas orgánicas individuales (O3).",
+          items: {
+            type: "object",
+            properties: {
+              pillar: { type: "string" },
+              format: { type: "string" },
+              platform: { type: "string" },
+              concept: { type: "string" },
+              hook: { type: "string" },
+              copy: { type: "string" },
+              visual_direction: { type: "string" },
+              cta: { type: "string" },
+              hashtags: { type: "array", items: { type: "string" } },
+              publish_date: { type: "string" },
+            },
+            required: ["pillar", "format", "platform", "concept"],
+          },
+        },
+        // Organic Creator Brief (O4) — uses creator_briefs structure with organic-specific fields
+        organic_creator_briefs: {
+          type: "array",
+          description: "Briefs para creators orgánicos (O4). Tono más natural, sin funnel stage.",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              objective: { type: "string" },
+              key_message: { type: "string" },
+              format: { type: "string" },
+              platform: { type: "string" },
+              tone: { type: "string" },
+              content_pillar: { type: "string" },
+              creative_freedom: { type: "string" },
+              engagement_goal: { type: "string", description: "Saves, shares, comments, etc." },
+              dos: { type: "array", items: { type: "string" } },
+              donts: { type: "array", items: { type: "string" } },
+              script_guidance: { type: "string" },
+              hashtags: { type: "array", items: { type: "string" } },
+            },
+            required: ["title"],
+          },
+        },
+        // Reel/TikTok Script (O5)
+        reel_scripts: {
+          type: "array",
+          description: "Guiones para reels/TikTok orgánico (O5). Más libertad narrativa, trend-aware.",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              platform: { type: "string" },
+              hook: { type: "string" },
+              body: { type: "string" },
+              cta: { type: "string" },
+              trending_audio: { type: "string" },
+              visual_notes: { type: "string" },
+              text_overlays: { type: "array", items: { type: "string" } },
+              duration: { type: "string" },
+              content_pillar: { type: "string" },
+              caption: { type: "string" },
+              hashtags: { type: "array", items: { type: "string" } },
+            },
+            required: ["title", "hook", "body"],
+          },
+        },
+        // Carousel (O6)
+        carousels: {
+          type: "array",
+          description: "Carruseles orgánicos (O6). Documento slide-by-slide.",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              platform: { type: "string" },
+              content_pillar: { type: "string" },
+              slides: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    slide_number: { type: "number" },
+                    type: { type: "string", enum: ["hook", "content", "cta"] },
+                    headline: { type: "string" },
+                    body: { type: "string" },
+                    visual_direction: { type: "string" },
+                  },
+                  required: ["slide_number", "headline"],
+                },
+              },
+              caption: { type: "string" },
+              hashtags: { type: "array", items: { type: "string" } },
+            },
+            required: ["title", "slides"],
+          },
+        },
+        // Editorial Calendar (O9)
+        editorial_calendar: {
+          type: "object",
+          description: "Calendario editorial orgánico (O9). Grilla con slots real-time y momentos culturales.",
+          properties: {
+            weeks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  week: { type: "string" },
+                  entries: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        day: { type: "string" },
+                        platform: { type: "string" },
+                        format: { type: "string" },
+                        pillar: { type: "string" },
+                        concept_preview: { type: "string" },
+                        visual_description: { type: "string" },
+                        hashtags: { type: "string" },
+                        status: { type: "string", enum: ["Planificado", "Real-Time", "Producción", "Aprobado", "Publicado"] },
+                        is_realtime_slot: { type: "boolean", description: "true si es slot reservado para real-time" },
+                        cultural_moment: { type: "string", description: "Momento cultural/fecha clave si aplica" },
+                      },
+                      required: ["day", "platform", "format"],
+                    },
+                  },
+                },
+                required: ["week", "entries"],
+              },
+            },
           },
         },
       },

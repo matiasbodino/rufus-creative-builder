@@ -26,6 +26,13 @@ const DOCX_TYPES = new Set<string>([
   "one_pager",
   "strategy_canvas",
   "brief_template",
+  "avatar",
+  "messaging_matrix",
+  "content_strategy",
+  "social_brief",
+  "organic_creator_brief",
+  "reel_script",
+  "carousel",
 ]);
 const XLSX_TYPES = new Set<string>([
   "content_calendar",
@@ -33,6 +40,7 @@ const XLSX_TYPES = new Set<string>([
   "casting_grid",
   "excel_pauta",
   "testing_matrix",
+  "editorial_calendar",
 ]);
 
 function makeSlug(name: string): string {

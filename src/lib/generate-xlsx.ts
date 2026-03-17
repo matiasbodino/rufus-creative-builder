@@ -163,6 +163,24 @@ export interface XlsxDeliverableData {
       }[];
     }[];
   };
+  // Editorial Calendar (O9)
+  editorial_calendar?: {
+    weeks: {
+      week: string;
+      entries: {
+        day: string;
+        platform: string;
+        format: string;
+        pillar?: string;
+        concept_preview?: string;
+        visual_description?: string;
+        hashtags?: string;
+        status?: string;
+        is_realtime_slot?: boolean;
+        cultural_moment?: string;
+      }[];
+    }[];
+  };
   // Testing matrix
   testing_matrix?: {
     hypothesis?: string;
@@ -1084,6 +1102,95 @@ export async function generateTestingMatrix(
   return Buffer.from(buffer);
 }
 
+// ─── 6. EDITORIAL CALENDAR (O9) ─────────────────────────────────
+
+export async function generateEditorialCalendar(
+  data: XlsxDeliverableData
+): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Rufus Creative Builder";
+
+  const ws = wb.addWorksheet("Calendario Editorial", {
+    views: [{ state: "frozen", ySplit: 3 }],
+  });
+
+  const cols = [
+    "Semana", "Día", "Plataforma", "Formato", "Pilar",
+    "Concepto / Copy Preview", "Dirección Visual", "Hashtags", "Status", "Momento Cultural"
+  ];
+  brandTitle(ws, `Calendario Editorial Orgánico — ${data.client_name}`, cols.length);
+
+  ws.columns = [
+    { width: 14 },  // Semana
+    { width: 12 },  // Día
+    { width: 14 },  // Plataforma
+    { width: 16 },  // Formato
+    { width: 18 },  // Pilar
+    { width: 45 },  // Concepto / Copy Preview
+    { width: 30 },  // Dirección Visual
+    { width: 25 },  // Hashtags
+    { width: 14 },  // Status
+    { width: 22 },  // Momento Cultural
+  ];
+
+  const headerRow = ws.addRow(cols);
+  headerStyle(ws, headerRow, cols.length);
+
+  const REALTIME_BG = "FFFFF3CD"; // Soft yellow for real-time slots
+  const CULTURAL_BG = "FFE8DAEF"; // Soft purple for cultural moments
+
+  let rowIdx = 0;
+  const calendar = data.editorial_calendar;
+  if (calendar?.weeks) {
+    calendar.weeks.forEach((week) => {
+      week.entries.forEach((entry) => {
+        const status = entry.is_realtime_slot ? "Real-Time" : (entry.status || "Planificado");
+        const row = ws.addRow([
+          week.week,
+          entry.day,
+          entry.platform,
+          entry.format,
+          entry.pillar || (entry.is_realtime_slot ? "— Real-Time —" : ""),
+          entry.concept_preview || (entry.is_realtime_slot ? "[Slot reservado para contenido real-time]" : ""),
+          entry.visual_description || "",
+          entry.hashtags || "",
+          status,
+          entry.cultural_moment || "",
+        ]);
+        altRowStyle(row, cols.length, rowIdx % 2 === 0);
+
+        // Highlight real-time slots
+        if (entry.is_realtime_slot) {
+          for (let c = 1; c <= cols.length; c++) {
+            row.getCell(c).fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: REALTIME_BG },
+            };
+          }
+          row.getCell(9).font = { name: FONT, size: 10, bold: true, color: { argb: "FFD97706" } };
+        }
+
+        // Highlight cultural moments
+        if (entry.cultural_moment) {
+          const momentCell = row.getCell(10);
+          momentCell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: CULTURAL_BG },
+          };
+          momentCell.font = { name: FONT, size: 10, bold: true, color: { argb: `FF${PURPLE}` } };
+        }
+
+        rowIdx++;
+      });
+    });
+  }
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(buffer);
+}
+
 // ─── Export map ─────────────────────────────────────────────────
 
 export type XlsxDeliverableType =
@@ -1091,7 +1198,8 @@ export type XlsxDeliverableType =
   | "storyboard"
   | "casting_grid"
   | "excel_pauta"
-  | "testing_matrix";
+  | "testing_matrix"
+  | "editorial_calendar";
 
 const GENERATORS: Record<
   XlsxDeliverableType,
@@ -1102,6 +1210,7 @@ const GENERATORS: Record<
   casting_grid: generateCastingGrid,
   excel_pauta: generateExcelPauta,
   testing_matrix: generateTestingMatrix,
+  editorial_calendar: generateEditorialCalendar,
 };
 
 export async function generateXlsx(
@@ -1119,4 +1228,5 @@ export const XLSX_LABELS: Record<XlsxDeliverableType, string> = {
   casting_grid: "Casting Grid",
   excel_pauta: "Excel de Pauta (Copy Outs)",
   testing_matrix: "Testing Matrix",
+  editorial_calendar: "Calendario Editorial Orgánico",
 };

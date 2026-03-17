@@ -197,6 +197,129 @@ export interface DeliverableData {
   next_steps?: string[];
   // One-pager specific
   one_pager_summary?: string;
+  // Avatar (AU1)
+  avatars?: {
+    name: string;
+    age?: string;
+    gender?: string;
+    location?: string;
+    occupation?: string;
+    life_stage?: string;
+    socioeconomic_level?: string;
+    values?: string[];
+    self_identity?: string;
+    fears?: string[];
+    frustrations?: string[];
+    aspirations?: string[];
+    primary_motivator?: string;
+    secondary_motivator?: string;
+    anti_motivator?: string;
+    digital_platforms?: string[];
+    content_habits?: string;
+    influences?: string[];
+    purchase_journey?: string;
+    device?: string;
+    tone?: string;
+    phrases_would_say?: string[];
+    phrases_would_never_say?: string[];
+    problem_in_own_words?: string;
+    awareness_level?: string;
+    hooks_that_work?: string[];
+    recommended_building_blocks?: string[];
+    copy_tone?: string;
+    objections_to_break?: string[];
+  }[];
+  // Messaging Matrix (AU2)
+  messaging_matrix?: {
+    rows?: {
+      avatar_name: string;
+      motivator?: string;
+      pain?: string;
+      hook_style?: string;
+      angle?: string;
+      tone?: string;
+      platform?: string;
+      cta?: string;
+      copy_framework?: string;
+    }[];
+  };
+  // Content Strategy (O1)
+  organic_strategy?: {
+    content_pillars?: {
+      name: string;
+      description: string;
+      function?: string;
+      percentage?: string;
+      sample_topics?: string[];
+    }[];
+    format_mix?: {
+      platform: string;
+      formats: { type: string; frequency: string }[];
+    }[];
+    tone?: string;
+    realtime_strategy?: string;
+    weekly_template?: string;
+    kpis?: { metric: string; target: string }[];
+  };
+  // Social Brief (O3)
+  social_briefs?: {
+    pillar: string;
+    format: string;
+    platform: string;
+    concept: string;
+    hook?: string;
+    copy?: string;
+    visual_direction?: string;
+    cta?: string;
+    hashtags?: string[];
+    publish_date?: string;
+  }[];
+  // Organic Creator Briefs (O4)
+  organic_creator_briefs?: {
+    title: string;
+    objective?: string;
+    key_message?: string;
+    format?: string;
+    platform?: string;
+    tone?: string;
+    content_pillar?: string;
+    creative_freedom?: string;
+    engagement_goal?: string;
+    dos?: string[];
+    donts?: string[];
+    script_guidance?: string;
+    hashtags?: string[];
+  }[];
+  // Reel Scripts (O5)
+  reel_scripts?: {
+    title: string;
+    platform?: string;
+    hook: string;
+    body: string;
+    cta?: string;
+    trending_audio?: string;
+    visual_notes?: string;
+    text_overlays?: string[];
+    duration?: string;
+    content_pillar?: string;
+    caption?: string;
+    hashtags?: string[];
+  }[];
+  // Carousels (O6)
+  carousels?: {
+    title: string;
+    platform?: string;
+    content_pillar?: string;
+    slides: {
+      slide_number: number;
+      type?: string;
+      headline: string;
+      body?: string;
+      visual_direction?: string;
+    }[];
+    caption?: string;
+    hashtags?: string[];
+  }[];
 }
 
 // ─── 1. GUÍA (full strategy guide) ─────────────────────────────
@@ -739,6 +862,574 @@ export async function generateBriefTemplate(data: DeliverableData): Promise<Buff
   return Buffer.from(await Packer.toBuffer(doc));
 }
 
+// ─── 7. AVATAR (AU1) ────────────────────────────────────────────
+
+export async function generateAvatar(data: DeliverableData): Promise<Buffer> {
+  const avatars = data.avatars || [];
+
+  const sections: Paragraph[] = [
+    ...brandHeader(
+      `Avatars de Audiencia: ${data.client_name}`,
+      `${avatars.length} avatar${avatars.length !== 1 ? "s" : ""} — Base para ads y orgánico`
+    ),
+  ];
+
+  avatars.forEach((avatar, i) => {
+    if (i > 0) {
+      sections.push(new Paragraph({ children: [new PageBreak()] }));
+    }
+
+    sections.push(
+      sectionHeading(`Avatar ${i + 1}: ${avatar.name}`),
+
+      // Identity
+      new Paragraph({
+        children: [
+          new TextRun({ text: "IDENTIDAD", font: FONT, size: 24, color: PURPLE, bold: true }),
+        ],
+        spacing: { before: 200, after: 100 },
+      }),
+      ...(avatar.age ? [labelValue("Edad", avatar.age)] : []),
+      ...(avatar.gender ? [labelValue("Género", avatar.gender)] : []),
+      ...(avatar.location ? [labelValue("Ubicación", avatar.location)] : []),
+      ...(avatar.occupation ? [labelValue("Ocupación", avatar.occupation)] : []),
+      ...(avatar.life_stage ? [labelValue("Etapa de vida", avatar.life_stage)] : []),
+      ...(avatar.socioeconomic_level ? [labelValue("NSE", avatar.socioeconomic_level)] : []),
+
+      divider(),
+
+      // Inner World
+      new Paragraph({
+        children: [
+          new TextRun({ text: "MUNDO INTERIOR", font: FONT, size: 24, color: PURPLE, bold: true }),
+        ],
+        spacing: { before: 200, after: 100 },
+      }),
+      ...(avatar.values?.length ? [labelValue("Valores", avatar.values.join(", "))] : []),
+      ...(avatar.self_identity ? [labelValue("Cómo se ve a sí mismo/a", avatar.self_identity)] : []),
+      ...(avatar.fears?.length ? [labelValue("Miedos", ""), ...avatar.fears.map(bulletPoint)] : []),
+      ...(avatar.frustrations?.length ? [labelValue("Frustraciones", ""), ...avatar.frustrations.map(bulletPoint)] : []),
+      ...(avatar.aspirations?.length ? [labelValue("Aspiraciones", ""), ...avatar.aspirations.map(bulletPoint)] : []),
+
+      divider(),
+
+      // Motivators (Life-Force 8)
+      new Paragraph({
+        children: [
+          new TextRun({ text: "MOTIVADORES (LIFE-FORCE 8)", font: FONT, size: 24, color: PURPLE, bold: true }),
+        ],
+        spacing: { before: 200, after: 100 },
+      }),
+      ...(avatar.primary_motivator ? [labelValue("Motivador primario (emocional)", avatar.primary_motivator)] : []),
+      ...(avatar.secondary_motivator ? [labelValue("Motivador secundario (racional)", avatar.secondary_motivator)] : []),
+
+      divider(),
+
+      // Anti-motivator
+      new Paragraph({
+        children: [
+          new TextRun({ text: "ANTI-MOTIVADOR", font: FONT, size: 24, color: PURPLE, bold: true }),
+        ],
+        shading: { type: ShadingType.SOLID, color: "FFF3F0" },
+        spacing: { before: 200, after: 100 },
+      }),
+      ...(avatar.anti_motivator ? [bodyText(avatar.anti_motivator)] : [bodyText("Por definir")]),
+
+      divider(),
+
+      // Digital Behavior
+      new Paragraph({
+        children: [
+          new TextRun({ text: "COMPORTAMIENTO DIGITAL", font: FONT, size: 24, color: PURPLE, bold: true }),
+        ],
+        spacing: { before: 200, after: 100 },
+      }),
+      ...(avatar.digital_platforms?.length ? [labelValue("Plataformas", avatar.digital_platforms.join(", "))] : []),
+      ...(avatar.content_habits ? [labelValue("Hábitos de consumo", avatar.content_habits)] : []),
+      ...(avatar.influences?.length ? [labelValue("Influencias", avatar.influences.join(", "))] : []),
+      ...(avatar.purchase_journey ? [labelValue("Journey de compra", avatar.purchase_journey)] : []),
+      ...(avatar.device ? [labelValue("Device", avatar.device)] : []),
+
+      divider(),
+
+      // Language
+      new Paragraph({
+        children: [
+          new TextRun({ text: "LENGUAJE", font: FONT, size: 24, color: PURPLE, bold: true }),
+        ],
+        spacing: { before: 200, after: 100 },
+      }),
+      ...(avatar.tone ? [labelValue("Tono", avatar.tone)] : []),
+      ...(avatar.phrases_would_say?.length
+        ? [
+            labelValue("Frases que diría", ""),
+            ...avatar.phrases_would_say.map((p) => bulletPoint(`"${p}"`)),
+          ]
+        : []),
+      ...(avatar.phrases_would_never_say?.length
+        ? [
+            labelValue("Frases que NUNCA diría", ""),
+            ...avatar.phrases_would_never_say.map((p) => bulletPoint(`"${p}"`)),
+          ]
+        : []),
+      ...(avatar.problem_in_own_words
+        ? [labelValue("Cómo describe su problema", `"${avatar.problem_in_own_words}"`)]
+        : []),
+
+      divider(),
+
+      // Awareness Level
+      new Paragraph({
+        children: [
+          new TextRun({ text: "AWARENESS LEVEL", font: FONT, size: 24, color: PURPLE, bold: true }),
+        ],
+        spacing: { before: 200, after: 100 },
+      }),
+      bodyText(avatar.awareness_level || "Por definir para esta campaña"),
+
+      divider(),
+
+      // Creative Implications
+      new Paragraph({
+        children: [
+          new TextRun({ text: "IMPLICACIONES CREATIVAS", font: FONT, size: 24, color: NEON_YELLOW, bold: true }),
+        ],
+        shading: { type: ShadingType.SOLID, color: DARK_BG },
+        spacing: { before: 200, after: 100 },
+      }),
+      ...(avatar.hooks_that_work?.length
+        ? [labelValue("Hooks que funcionan", ""), ...avatar.hooks_that_work.map(bulletPoint)]
+        : []),
+      ...(avatar.recommended_building_blocks?.length
+        ? [labelValue("Building blocks recomendados", ""), ...avatar.recommended_building_blocks.map(bulletPoint)]
+        : []),
+      ...(avatar.copy_tone ? [labelValue("Tono de copy", avatar.copy_tone)] : []),
+      ...(avatar.objections_to_break?.length
+        ? [labelValue("Objeciones a romper", ""), ...avatar.objections_to_break.map(bulletPoint)]
+        : []),
+    );
+  });
+
+  const doc = new Document({
+    sections: [{ children: sections }],
+  });
+
+  return Buffer.from(await Packer.toBuffer(doc));
+}
+
+// ─── 8. MESSAGING MATRIX (AU2) ─────────────────────────────────
+
+export async function generateMessagingMatrix(data: DeliverableData): Promise<Buffer> {
+  const matrix = data.messaging_matrix;
+  const rows = matrix?.rows || [];
+
+  const children: (Paragraph | Table)[] = [
+    ...brandHeader(
+      `Messaging Matrix: ${data.client_name}`,
+      `Avatar × Awareness × Angle × Framework`
+    ),
+  ];
+
+  if (rows.length > 0) {
+    // Build table
+    const headerCells = [
+      "Avatar", "Motivador", "Dolor", "Hook Style", "Angle", "Tono", "Plataforma", "CTA", "Framework"
+    ].map(
+      (text) =>
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text, font: FONT, size: 18, color: "FFFFFF", bold: true })],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+          shading: { type: ShadingType.SOLID, color: PURPLE },
+          width: { size: 1100, type: WidthType.DXA },
+        })
+    );
+
+    const dataRows = rows.map(
+      (r) =>
+        new TableRow({
+          children: [
+            r.avatar_name, r.motivator || "—", r.pain || "—", r.hook_style || "—",
+            r.angle || "—", r.tone || "—", r.platform || "—", r.cta || "—", r.copy_framework || "—",
+          ].map(
+            (val) =>
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: val, font: FONT, size: 18, color: "333333" })],
+                  }),
+                ],
+                width: { size: 1100, type: WidthType.DXA },
+              })
+          ),
+        })
+    );
+
+    children.push(
+      new Table({
+        rows: [new TableRow({ children: headerCells }), ...dataRows],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      })
+    );
+  } else {
+    children.push(bodyText("Matriz vacía — completar con datos de avatars."));
+  }
+
+  const doc = new Document({
+    sections: [{ children }],
+  });
+
+  return Buffer.from(await Packer.toBuffer(doc));
+}
+
+// ─── 9. CONTENT STRATEGY (O1) ──────────────────────────────────
+
+export async function generateContentStrategy(data: DeliverableData): Promise<Buffer> {
+  const strategy = data.organic_strategy;
+
+  const sections: Paragraph[] = [
+    ...brandHeader(
+      `Estrategia de Contenido Orgánico: ${data.client_name}`,
+      `Pilares, formatos, tono y calendario`
+    ),
+  ];
+
+  // Pillars
+  if (strategy?.content_pillars?.length) {
+    sections.push(sectionHeading("Pilares de contenido"));
+    strategy.content_pillars.forEach((p, i) => {
+      sections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `${i + 1}. ${p.name}`,
+              font: FONT, size: 24, color: PURPLE, bold: true,
+            }),
+            ...(p.function ? [new TextRun({ text: ` — ${p.function}`, font: FONT, size: 22, color: "666666" })] : []),
+            ...(p.percentage ? [new TextRun({ text: ` (${p.percentage})`, font: FONT, size: 22, color: "999999" })] : []),
+          ],
+          spacing: { before: 200, after: 100 },
+        }),
+        bodyText(p.description),
+        ...(p.sample_topics?.length
+          ? [labelValue("Temas ejemplo", ""), ...p.sample_topics.map(bulletPoint)]
+          : []),
+      );
+    });
+  }
+
+  // Format mix
+  if (strategy?.format_mix?.length) {
+    sections.push(divider(), sectionHeading("Mix de formatos por plataforma"));
+    strategy.format_mix.forEach((pm) => {
+      sections.push(
+        new Paragraph({
+          children: [new TextRun({ text: pm.platform, font: FONT, size: 22, color: PURPLE, bold: true })],
+          spacing: { before: 150, after: 80 },
+        }),
+        ...pm.formats.map((f) => bulletPoint(`${f.type}: ${f.frequency}`)),
+      );
+    });
+  }
+
+  // Tone
+  if (strategy?.tone) {
+    sections.push(divider(), sectionHeading("Tono"), bodyText(strategy.tone));
+  }
+
+  // Weekly template
+  if (strategy?.weekly_template) {
+    sections.push(divider(), sectionHeading("Grilla semanal tipo"), bodyText(strategy.weekly_template));
+  }
+
+  // Real-time strategy
+  if (strategy?.realtime_strategy) {
+    sections.push(
+      divider(),
+      sectionHeading("Estrategia Real-Time"),
+      bodyText(strategy.realtime_strategy),
+    );
+  }
+
+  // KPIs
+  if (strategy?.kpis?.length) {
+    sections.push(divider(), sectionHeading("KPIs orgánicos"));
+    strategy.kpis.forEach((k) => sections.push(labelValue(k.metric, k.target)));
+  }
+
+  const doc = new Document({
+    sections: [{ children: sections }],
+  });
+
+  return Buffer.from(await Packer.toBuffer(doc));
+}
+
+// ─── 10. SOCIAL BRIEF (O3) ─────────────────────────────────────
+
+export async function generateSocialBrief(data: DeliverableData): Promise<Buffer> {
+  const briefs = data.social_briefs || [];
+
+  const sections: Paragraph[] = [
+    ...brandHeader(
+      `Social Briefs: ${data.client_name}`,
+      `${briefs.length} brief${briefs.length !== 1 ? "s" : ""} de piezas orgánicas`
+    ),
+  ];
+
+  briefs.forEach((b, i) => {
+    sections.push(
+      divider(),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `BRIEF ${i + 1}: ${b.concept.toUpperCase()}`,
+            font: FONT, size: 26, color: PURPLE, bold: true,
+          }),
+        ],
+        spacing: { before: 300, after: 150 },
+      }),
+      labelValue("Pilar", b.pillar),
+      labelValue("Formato", b.format),
+      labelValue("Plataforma", b.platform),
+      labelValue("Concepto", b.concept),
+      ...(b.hook ? [labelValue("Hook", b.hook)] : []),
+      ...(b.copy ? [sectionHeading("Copy"), bodyText(b.copy)] : []),
+      ...(b.visual_direction ? [labelValue("Dirección visual", b.visual_direction)] : []),
+      ...(b.cta ? [labelValue("CTA", b.cta)] : []),
+      ...(b.hashtags?.length ? [labelValue("Hashtags", b.hashtags.join(" "))] : []),
+      ...(b.publish_date ? [labelValue("Fecha de publicación", b.publish_date)] : []),
+    );
+  });
+
+  const doc = new Document({
+    sections: [{ children: sections }],
+  });
+
+  return Buffer.from(await Packer.toBuffer(doc));
+}
+
+// ─── 11. ORGANIC CREATOR BRIEF (O4) ────────────────────────────
+
+export async function generateOrganicCreatorBrief(data: DeliverableData): Promise<Buffer> {
+  const briefs = data.organic_creator_briefs || [];
+
+  const sections: Paragraph[] = [
+    ...brandHeader(
+      `Creator Briefs Orgánico: ${data.client_name}`,
+      `${briefs.length} brief${briefs.length !== 1 ? "s" : ""} para creators — Contenido orgánico`
+    ),
+  ];
+
+  briefs.forEach((b, i) => {
+    sections.push(
+      divider(),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `BRIEF ${i + 1}: ${b.title.toUpperCase()}`,
+            font: FONT, size: 26, color: PURPLE, bold: true,
+          }),
+        ],
+        spacing: { before: 300, after: 150 },
+      }),
+      ...(b.objective ? [labelValue("Objetivo", b.objective)] : []),
+      ...(b.key_message ? [labelValue("Key message", b.key_message)] : []),
+      ...(b.format ? [labelValue("Formato", b.format)] : []),
+      ...(b.platform ? [labelValue("Plataforma", b.platform)] : []),
+      ...(b.content_pillar ? [labelValue("Pilar de contenido", b.content_pillar)] : []),
+      ...(b.tone ? [labelValue("Tono", b.tone)] : []),
+      ...(b.creative_freedom ? [labelValue("Libertad creativa", b.creative_freedom)] : []),
+      ...(b.engagement_goal ? [labelValue("Objetivo de engagement", b.engagement_goal)] : []),
+      ...(b.dos?.length
+        ? [
+            new Paragraph({
+              children: [new TextRun({ text: "DO's", font: FONT, size: 22, color: "10B981", bold: true })],
+              spacing: { before: 150 },
+            }),
+            ...b.dos.map(bulletPoint),
+          ]
+        : []),
+      ...(b.donts?.length
+        ? [
+            new Paragraph({
+              children: [new TextRun({ text: "DON'Ts", font: FONT, size: 22, color: "EF4444", bold: true })],
+              spacing: { before: 150 },
+            }),
+            ...b.donts.map(bulletPoint),
+          ]
+        : []),
+      ...(b.script_guidance ? [sectionHeading("Guía de guión"), bodyText(b.script_guidance)] : []),
+      ...(b.hashtags?.length ? [labelValue("Hashtags", b.hashtags.join(" "))] : []),
+    );
+  });
+
+  const doc = new Document({
+    sections: [{ children: sections }],
+  });
+
+  return Buffer.from(await Packer.toBuffer(doc));
+}
+
+// ─── 12. REEL / TIKTOK SCRIPT (O5) ─────────────────────────────
+
+export async function generateReelScript(data: DeliverableData): Promise<Buffer> {
+  const scripts = data.reel_scripts || [];
+
+  const sections: Paragraph[] = [
+    ...brandHeader(
+      `Scripts Orgánicos: ${data.client_name}`,
+      `${scripts.length} guion${scripts.length !== 1 ? "es" : ""} para Reels / TikTok`
+    ),
+  ];
+
+  scripts.forEach((s, i) => {
+    sections.push(
+      divider(),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `GUIÓN ${i + 1}: ${s.title.toUpperCase()}`,
+            font: FONT, size: 28, color: PURPLE, bold: true,
+          }),
+        ],
+        spacing: { before: 300, after: 200 },
+      }),
+      ...(s.platform ? [labelValue("Plataforma", s.platform)] : []),
+      ...(s.duration ? [labelValue("Duración", s.duration)] : []),
+      ...(s.content_pillar ? [labelValue("Pilar", s.content_pillar)] : []),
+      ...(s.trending_audio ? [labelValue("Audio trending", s.trending_audio)] : []),
+      new Paragraph({ spacing: { after: 100 } }),
+
+      // Hook
+      new Paragraph({
+        children: [
+          new TextRun({ text: "HOOK", font: FONT, size: 20, color: NEON_YELLOW, bold: true }),
+        ],
+        shading: { type: ShadingType.SOLID, color: DARK_BG },
+        spacing: { after: 50 },
+      }),
+      bodyText(s.hook),
+
+      // Body
+      new Paragraph({
+        children: [
+          new TextRun({ text: "DESARROLLO", font: FONT, size: 20, color: "FFFFFF", bold: true }),
+        ],
+        shading: { type: ShadingType.SOLID, color: PURPLE },
+        spacing: { after: 50 },
+      }),
+      bodyText(s.body),
+
+      // CTA
+      ...(s.cta
+        ? [
+            new Paragraph({
+              children: [
+                new TextRun({ text: "CTA", font: FONT, size: 20, color: DARK_BG, bold: true }),
+              ],
+              shading: { type: ShadingType.SOLID, color: NEON_YELLOW },
+              spacing: { after: 50 },
+            }),
+            bodyText(s.cta),
+          ]
+        : []),
+
+      // Text overlays
+      ...(s.text_overlays?.length
+        ? [labelValue("Text overlays", ""), ...s.text_overlays.map(bulletPoint)]
+        : []),
+
+      // Visual notes
+      ...(s.visual_notes ? [labelValue("Notas visuales", s.visual_notes)] : []),
+
+      // Caption
+      ...(s.caption ? [sectionHeading("Caption"), bodyText(s.caption)] : []),
+
+      // Hashtags
+      ...(s.hashtags?.length ? [labelValue("Hashtags", s.hashtags.join(" "))] : []),
+    );
+  });
+
+  const doc = new Document({
+    sections: [{ children: sections }],
+  });
+
+  return Buffer.from(await Packer.toBuffer(doc));
+}
+
+// ─── 13. CAROUSEL (O6) ─────────────────────────────────────────
+
+export async function generateCarousel(data: DeliverableData): Promise<Buffer> {
+  const carousels = data.carousels || [];
+
+  const sections: Paragraph[] = [
+    ...brandHeader(
+      `Carruseles: ${data.client_name}`,
+      `${carousels.length} carrusel${carousels.length !== 1 ? "es" : ""} — Slide by slide`
+    ),
+  ];
+
+  carousels.forEach((car, i) => {
+    if (i > 0) {
+      sections.push(new Paragraph({ children: [new PageBreak()] }));
+    }
+
+    sections.push(
+      sectionHeading(`Carrusel ${i + 1}: ${car.title}`),
+      ...(car.platform ? [labelValue("Plataforma", car.platform)] : []),
+      ...(car.content_pillar ? [labelValue("Pilar", car.content_pillar)] : []),
+      new Paragraph({ spacing: { after: 150 } }),
+    );
+
+    // Slides
+    car.slides.forEach((slide) => {
+      const slideType = slide.type || "content";
+      const bgColor = slideType === "hook" ? DARK_BG : slideType === "cta" ? PURPLE : "F3F0FF";
+      const textColor = slideType === "hook" ? NEON_YELLOW : slideType === "cta" ? "FFFFFF" : PURPLE;
+
+      sections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `SLIDE ${slide.slide_number}${slideType === "hook" ? " — HOOK" : slideType === "cta" ? " — CTA" : ""}`,
+              font: FONT, size: 20, color: textColor, bold: true,
+            }),
+          ],
+          shading: { type: ShadingType.SOLID, color: bgColor },
+          spacing: { before: 200, after: 50 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: slide.headline, font: FONT, size: 24, color: DARK_BG, bold: true }),
+          ],
+          spacing: { after: 80 },
+        }),
+        ...(slide.body ? [bodyText(slide.body)] : []),
+        ...(slide.visual_direction ? [labelValue("Visual", slide.visual_direction)] : []),
+      );
+    });
+
+    // Caption
+    if (car.caption) {
+      sections.push(divider(), sectionHeading("Caption"), bodyText(car.caption));
+    }
+
+    // Hashtags
+    if (car.hashtags?.length) {
+      sections.push(labelValue("Hashtags", car.hashtags.join(" ")));
+    }
+  });
+
+  const doc = new Document({
+    sections: [{ children: sections }],
+  });
+
+  return Buffer.from(await Packer.toBuffer(doc));
+}
+
 // ─── Export map ─────────────────────────────────────────────────
 
 export type DocxDeliverableType =
@@ -747,7 +1438,14 @@ export type DocxDeliverableType =
   | "creator_briefs"
   | "one_pager"
   | "strategy_canvas"
-  | "brief_template";
+  | "brief_template"
+  | "avatar"
+  | "messaging_matrix"
+  | "content_strategy"
+  | "social_brief"
+  | "organic_creator_brief"
+  | "reel_script"
+  | "carousel";
 
 const GENERATORS: Record<DocxDeliverableType, (data: DeliverableData) => Promise<Buffer>> = {
   guia: generateGuia,
@@ -756,6 +1454,13 @@ const GENERATORS: Record<DocxDeliverableType, (data: DeliverableData) => Promise
   one_pager: generateOnePager,
   strategy_canvas: generateStrategyCanvas,
   brief_template: generateBriefTemplate,
+  avatar: generateAvatar,
+  messaging_matrix: generateMessagingMatrix,
+  content_strategy: generateContentStrategy,
+  social_brief: generateSocialBrief,
+  organic_creator_brief: generateOrganicCreatorBrief,
+  reel_script: generateReelScript,
+  carousel: generateCarousel,
 };
 
 export async function generateDocx(
@@ -774,4 +1479,11 @@ export const DOCX_LABELS: Record<DocxDeliverableType, string> = {
   one_pager: "One Pager",
   strategy_canvas: "Strategy Canvas",
   brief_template: "Brief de aprobación",
+  avatar: "Avatars de Audiencia",
+  messaging_matrix: "Messaging Matrix",
+  content_strategy: "Estrategia de Contenido Orgánico",
+  social_brief: "Social Briefs",
+  organic_creator_brief: "Creator Briefs Orgánico",
+  reel_script: "Scripts Reels / TikTok",
+  carousel: "Carruseles",
 };
