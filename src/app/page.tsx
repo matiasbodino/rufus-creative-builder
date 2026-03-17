@@ -200,7 +200,7 @@ export default function Home() {
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
+      const timeout = setTimeout(() => controller.abort(), 120000);
 
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -215,7 +215,7 @@ export default function Home() {
         console.error("API error:", res.status, errorText);
         const assistantMsg: (typeof messages)[number] = {
           role: "assistant",
-          content: `Error del servidor (${res.status}). ${errorText.includes("message") ? JSON.parse(errorText).error || errorText : "Intentá de nuevo."}`,
+          content: `Error del servidor (${res.status}). Intentá de nuevo.`,
         };
         const updated = [...newMessages, assistantMsg];
         setMessages(updated);
@@ -225,21 +225,78 @@ export default function Home() {
         return;
       }
 
-      const data = await res.json();
+      // Read SSE stream
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
 
-      const assistantMsg: (typeof messages)[number] = {
-        role: "assistant",
-        content: data.message || data.error || "Error desconocido",
-        file: data.file,
-        files: data.files,
-      };
+      const decoder = new TextDecoder();
+      let assistantText = "";
+      let assistantFiles: { url: string; label: string }[] = [];
+      let buffer = "";
 
-      const updated = [...newMessages, assistantMsg];
-      setMessages(updated);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      // Save to conversation
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        // Keep the last potentially incomplete line in the buffer
+        buffer = lines.pop() || "";
+
+        let eventType = "";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7);
+          } else if (line.startsWith("data: ") && eventType) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (eventType === "text") {
+                assistantText += data.text;
+                const updated = [
+                  ...newMessages,
+                  { role: "assistant" as const, content: assistantText, files: assistantFiles.length > 0 ? assistantFiles : undefined },
+                ];
+                setMessages(updated);
+              } else if (eventType === "files") {
+                assistantFiles = data.files;
+                const updated = [
+                  ...newMessages,
+                  { role: "assistant" as const, content: assistantText, files: assistantFiles },
+                ];
+                setMessages(updated);
+              } else if (eventType === "clear") {
+                assistantText = "";
+              } else if (eventType === "status") {
+                assistantText = data.text;
+                const updated = [
+                  ...newMessages,
+                  { role: "assistant" as const, content: assistantText, files: assistantFiles.length > 0 ? assistantFiles : undefined },
+                ];
+                setMessages(updated);
+              } else if (eventType === "error") {
+                assistantText = data.message || "Error procesando la solicitud";
+                const updated = [
+                  ...newMessages,
+                  { role: "assistant" as const, content: assistantText },
+                ];
+                setMessages(updated);
+              }
+            } catch {
+              // ignore malformed JSON
+            }
+            eventType = "";
+          }
+        }
+      }
+
+      // Final save to conversation
+      const finalMessages = [
+        ...newMessages,
+        { role: "assistant" as const, content: assistantText, files: assistantFiles.length > 0 ? assistantFiles : undefined },
+      ];
+      setMessages(finalMessages);
       setConversations((prev) =>
-        prev.map((c) => (c.id === convId ? { ...c, messages: updated } : c))
+        prev.map((c) => (c.id === convId ? { ...c, messages: finalMessages } : c))
       );
     } catch (err) {
       console.error("Fetch error:", err);
