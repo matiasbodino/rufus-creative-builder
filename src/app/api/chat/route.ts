@@ -16,7 +16,9 @@ import {
   XlsxDeliverableData,
 } from "@/lib/generate-xlsx";
 
-const anthropic = new Anthropic();
+const anthropic = new Anthropic({
+  timeout: 120_000, // 2 minutes
+});
 
 // Vercel serverless max duration (seconds) — Hobby: 60s, Pro: 300s
 export const maxDuration = 60;
