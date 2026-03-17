@@ -122,12 +122,27 @@ export default function Home() {
       const res = await fetch("/api/upload", { method: "POST", body: form });
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        console.error("Upload error:", data.error);
+        // Show inline error instead of alert popup
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant" as const,
+            content: `⚠️ Error al subir archivo: ${data.error}`,
+          },
+        ]);
       } else {
         setAttachedFile({ name: data.filename, text: data.text });
       }
-    } catch {
-      alert("Error subiendo el archivo");
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant" as const,
+          content: "⚠️ Error subiendo el archivo. Intentá con otro formato (PDF, DOCX, TXT, CSV).",
+        },
+      ]);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

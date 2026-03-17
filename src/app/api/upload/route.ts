@@ -2,11 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import mammoth from "mammoth";
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
-  const data = new Uint8Array(buffer);
-  const parser = new PDFParse(data);
-  const result = await parser.getText();
-  return result.text;
+  try {
+    const { PDFParse } = await import("pdf-parse");
+    const data = new Uint8Array(buffer);
+    const parser = new PDFParse(data);
+    const result = await parser.getText();
+    return result.text || "";
+  } catch (err) {
+    console.error("PDF parse error:", err);
+    // Fallback: try to extract raw text from PDF buffer
+    const text = buffer.toString("utf-8");
+    // Extract readable text between stream markers
+    const readable = text.replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s{3,}/g, " ").trim();
+    if (readable.length > 100) {
+      return readable;
+    }
+    throw new Error("No se pudo extraer texto del PDF. Intentá convertirlo a DOCX o TXT.");
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -26,15 +38,31 @@ export async function POST(req: NextRequest) {
     } else if (name.endsWith(".docx")) {
       const result = await mammoth.extractRawText({ buffer });
       text = result.value;
+    } else if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+      // Excel files — extract sheet names and basic info
+      text = `[Archivo Excel: ${file.name}] — Los archivos Excel se procesan como referencia. Describí qué contiene o qué necesitás hacer con él.`;
     } else if (
       name.endsWith(".txt") ||
       name.endsWith(".csv") ||
       name.endsWith(".md")
     ) {
       text = buffer.toString("utf-8");
+    } else if (
+      name.endsWith(".pptx") ||
+      name.endsWith(".ppt")
+    ) {
+      text = `[Archivo PowerPoint: ${file.name}] — Describí qué contiene o qué necesitás hacer con él.`;
+    } else if (
+      name.endsWith(".png") ||
+      name.endsWith(".jpg") ||
+      name.endsWith(".jpeg") ||
+      name.endsWith(".gif") ||
+      name.endsWith(".webp")
+    ) {
+      text = `[Imagen: ${file.name}] — Las imágenes se adjuntan como referencia visual. Describí qué contiene o qué necesitás.`;
     } else {
       return NextResponse.json(
-        { error: "Formato no soportado. Usá PDF, DOCX, TXT, CSV o MD." },
+        { error: "Formato no soportado. Usá PDF, DOCX, TXT, CSV, MD, XLSX o PPTX." },
         { status: 400 }
       );
     }
@@ -51,8 +79,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("Upload error:", err);
+    const errorMessage = err instanceof Error ? err.message : "Error procesando el archivo";
     return NextResponse.json(
-      { error: "Error procesando el archivo" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
