@@ -144,15 +144,37 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
+    // Sanitize messages for Claude API:
+    // 1. Must start with "user"
+    // 2. Roles must alternate (no consecutive same-role messages)
+    // 3. Filter out system/error messages
+    const sanitized: { role: "user" | "assistant"; content: string }[] = [];
+    for (const m of messages) {
+      const role = m.role as "user" | "assistant";
+      const content = m.content as string;
+      if (!content || content.startsWith("⚠️")) continue; // skip error messages
+
+      if (sanitized.length === 0 && role !== "user") continue; // must start with user
+
+      // Merge consecutive same-role messages
+      if (sanitized.length > 0 && sanitized[sanitized.length - 1].role === role) {
+        sanitized[sanitized.length - 1].content += "\n\n" + content;
+      } else {
+        sanitized.push({ role, content });
+      }
+    }
+
+    // Ensure we have at least one message
+    if (sanitized.length === 0) {
+      return NextResponse.json({ message: "No se recibió ningún mensaje. Escribí algo para empezar." });
+    }
+
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 8192,
       system: SYSTEM_PROMPT,
       tools: TOOLS as Anthropic.Tool[],
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role,
-        content: m.content,
-      })),
+      messages: sanitized,
     });
 
     // Check if Claude wants to use a tool
