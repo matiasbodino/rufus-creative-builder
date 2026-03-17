@@ -199,11 +199,32 @@ export default function Home() {
     }
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: apiMessages }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("API error:", res.status, errorText);
+        const assistantMsg: (typeof messages)[number] = {
+          role: "assistant",
+          content: `Error del servidor (${res.status}). ${errorText.includes("message") ? JSON.parse(errorText).error || errorText : "Intentá de nuevo."}`,
+        };
+        const updated = [...newMessages, assistantMsg];
+        setMessages(updated);
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, messages: updated } : c))
+        );
+        return;
+      }
+
       const data = await res.json();
 
       const assistantMsg: (typeof messages)[number] = {
@@ -220,10 +241,12 @@ export default function Home() {
       setConversations((prev) =>
         prev.map((c) => (c.id === convId ? { ...c, messages: updated } : c))
       );
-    } catch {
+    } catch (err) {
+      console.error("Fetch error:", err);
+      const errorDetail = err instanceof Error ? err.message : "Error desconocido";
       const errMsg: (typeof messages)[number] = {
         role: "assistant",
-        content: "Error al conectar con el servidor. Intentá de nuevo.",
+        content: `Error al conectar: ${errorDetail}. Intentá de nuevo.`,
       };
       setMessages([...newMessages, errMsg]);
     } finally {
