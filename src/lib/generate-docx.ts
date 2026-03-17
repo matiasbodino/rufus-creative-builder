@@ -19,7 +19,7 @@ import {
 const PURPLE = "653BEB";
 const DARK_BG = "1C0C45";
 const NEON_YELLOW = "E0E000";
-const FONT = "Instrument Sans";
+const FONT = "Calibri";
 
 // ─── Shared helpers ─────────────────────────────────────────────
 

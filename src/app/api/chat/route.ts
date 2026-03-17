@@ -31,6 +31,8 @@ const XLSX_TYPES = new Set<string>([
   "content_calendar",
   "storyboard",
   "casting_grid",
+  "excel_pauta",
+  "testing_matrix",
 ]);
 
 function makeSlug(name: string): string {

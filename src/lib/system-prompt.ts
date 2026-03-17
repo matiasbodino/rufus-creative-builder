@@ -185,11 +185,15 @@ Nivel 1: Claim directo | Nivel 2: Claim ampliado | Nivel 3: Mecanismo único | N
 - Hablá en español rioplatense (vos, ché, etc.)
 - Sé directo y profesional
 - Cuando tengas todo, llamá a generate_case para generar el PPTX
-- Podés generar entregables adicionales con generate_deliverable (guías DOCX, guiones DOCX, one pager, strategy canvas, brief de aprobación, storyboards XLSX, calendario de contenido XLSX, casting grid XLSX)
+- Podés generar entregables adicionales con generate_deliverable. Tipos disponibles:
+  - DOCX: guia (estrategia completa), guiones (scripts shot-by-shot), creator_briefs, one_pager, strategy_canvas, brief_template (aprobación del cliente)
+  - XLSX: excel_pauta (COPY OUTS — el entregable operativo más importante, con nomenclatura Rufus, límites de caracteres, formatos por plataforma), content_calendar, storyboard, casting_grid, testing_matrix (creative sprints)
 - Si el caso incluye scripts/guiones, ofrecé generar el DOCX de guiones además del PPTX
 - Si hay calendario de contenido, ofrecé el Excel
 - Si hay creators, ofrecé el casting grid y los creator briefs
 - Si el cliente quiere algo rápido, proponé el One Pager
+- Si piden "copy outs", "textos de ads", "la pauta", "excel de pauta" → generá excel_pauta con la estructura operativa completa
+- Si piden "testing matrix", "qué testeo", "variaciones", "creative sprint" → generá testing_matrix
 - Siempre explicá tu razonamiento estratégico
 `;
 
@@ -213,9 +217,11 @@ export const TOOLS: Anthropic.Tool[] = [
             "content_calendar",
             "storyboard",
             "casting_grid",
+            "excel_pauta",
+            "testing_matrix",
           ],
           description:
-            "Tipo de entregable: guia (DOCX estratégico completo), guiones (DOCX scripts de producción), creator_briefs (DOCX briefs para creators), one_pager (DOCX concepto rápido), strategy_canvas (DOCX mapa estratégico), brief_template (DOCX para aprobación del cliente), content_calendar (XLSX calendario editorial), storyboard (XLSX escenas), casting_grid (XLSX grid de creators)",
+            "Tipo de entregable: guia (DOCX estratégico completo), guiones (DOCX scripts de producción), creator_briefs (DOCX briefs para creators), one_pager (DOCX concepto rápido), strategy_canvas (DOCX mapa estratégico), brief_template (DOCX para aprobación del cliente), content_calendar (XLSX calendario editorial), storyboard (XLSX escenas), casting_grid (XLSX grid de creators), excel_pauta (XLSX copy outs de pauta con nomenclatura, límites de caracteres, formatos por plataforma — EL ENTREGABLE MÁS OPERATIVO), testing_matrix (XLSX matriz de testing creativo con variables, combinaciones y priorización)",
         },
         client_name: { type: "string", description: "Nombre del cliente" },
         work_type: {
@@ -404,6 +410,96 @@ export const TOOLS: Anthropic.Tool[] = [
         timeline: { type: "string" },
         next_steps: { type: "array", items: { type: "string" } },
         one_pager_summary: { type: "string" },
+        campaign_name: { type: "string", description: "Nombre de la campaña (para excel_pauta)" },
+        excel_pauta: {
+          type: "object",
+          description: "Datos para el Excel de Pauta / Copy Outs. Estructura: deliveries → funnel_stages → pieces con copy_fields.",
+          properties: {
+            deliveries: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  audience: { type: "string", description: "Audiencia de esta entrega" },
+                  funnel_stages: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        stage: { type: "string", enum: ["AWARENESS", "CONSIDERACIÓN", "CONVERSIÓN"], description: "Etapa del funnel" },
+                        pieces: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              platform: { type: "string", enum: ["Meta", "TikTok", "YouTube", "DV360", "Spotify", "Seedtag"] },
+                              piece_type: { type: "string", enum: ["Producto", "UGC", "CRE"], description: "Tipo: Producto, UGC o CRE (creator)" },
+                              format: { type: "string", enum: ["VID", "CAR", "IMG"], description: "VID=video, CAR=carrusel, IMG=estática" },
+                              version: { type: "number", description: "Número de versión (1, 2, 3...)" },
+                              copy_fields: {
+                                type: "array",
+                                items: {
+                                  type: "object",
+                                  properties: {
+                                    field_name: { type: "string", description: "Ej: Título, Texto principal, Descripción, CTA" },
+                                    char_limit: { type: "number", description: "Límite de caracteres para este campo" },
+                                    copy: { type: "string", description: "El copy real que va en este campo" },
+                                  },
+                                  required: ["field_name", "char_limit", "copy"],
+                                },
+                              },
+                              delivery_formats: { type: "array", items: { type: "string" }, description: "Formatos de entrega ej: 1080x1920, 1080x1350" },
+                              slide_descriptions: { type: "array", items: { type: "string" }, description: "Descripción por slide (solo para carruseles)" },
+                            },
+                            required: ["platform", "piece_type", "format", "version", "copy_fields"],
+                          },
+                        },
+                      },
+                      required: ["stage", "pieces"],
+                    },
+                  },
+                },
+                required: ["name", "funnel_stages"],
+              },
+            },
+          },
+        },
+        testing_matrix: {
+          type: "object",
+          description: "Datos para la Testing Matrix de creative sprints.",
+          properties: {
+            hypothesis: { type: "string", description: "Hipótesis general del test" },
+            variables: {
+              type: "object",
+              properties: {
+                hooks: { type: "array", items: { type: "string" } },
+                angles: { type: "array", items: { type: "string" } },
+                formats: { type: "array", items: { type: "string" } },
+                copy_variants: { type: "array", items: { type: "string" } },
+                audiences: { type: "array", items: { type: "string" } },
+              },
+            },
+            combinations: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  hook: { type: "string" },
+                  angle: { type: "string" },
+                  format: { type: "string" },
+                  copy_variant: { type: "string" },
+                  hypothesis: { type: "string" },
+                  priority: { type: "string", enum: ["Alta", "Media", "Baja"] },
+                  metrics: { type: "string" },
+                },
+                required: ["name", "hook", "angle", "format", "hypothesis", "priority", "metrics"],
+              },
+            },
+            metrics_to_measure: { type: "array", items: { type: "string" } },
+          },
+        },
       },
       required: ["deliverable_type", "client_name", "work_type"],
     },
