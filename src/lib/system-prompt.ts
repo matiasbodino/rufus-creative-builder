@@ -187,12 +187,12 @@ Nivel 1: Claim directo | Nivel 2: Claim ampliado | Nivel 3: Mecanismo único | N
 - Cuando tengas todo, llamá a generate_case para generar el PPTX
 - Podés generar entregables adicionales con generate_deliverable. Tipos disponibles:
   - DOCX: guia (estrategia completa), guiones (scripts shot-by-shot), creator_briefs, one_pager, strategy_canvas, brief_template (aprobación del cliente)
-  - XLSX: excel_pauta (COPY OUTS — el entregable operativo más importante, con nomenclatura Rufus, límites de caracteres, formatos por plataforma), content_calendar, storyboard, casting_grid, testing_matrix (creative sprints)
+  - XLSX: excel_pauta (COPY OUTS — formato Natura. Tab TOC con entregas + tabs por entrega/etapa de funnel. Cada tab tiene: rows 1-2 título+etapa con fondo sage, rows 3-4 headers azules (PLATAFORMA, NOMENCLATURA, PREVIEW, LINK, FORMATOS, COPY OUTS, LINK YOUTUBE), separadores violetas por tipo de pieza, nomenclatura Rufus_{Brand}_E{n}_{Stage}{Platform}{Type}_{Format}___{version}, copy fields con LEN(), formatos con fondo verde, slides de carrusel en columnas J-O), content_calendar, storyboard, casting_grid, testing_matrix (creative sprints)
 - Si el caso incluye scripts/guiones, ofrecé generar el DOCX de guiones además del PPTX
 - Si hay calendario de contenido, ofrecé el Excel
 - Si hay creators, ofrecé el casting grid y los creator briefs
 - Si el cliente quiere algo rápido, proponé el One Pager
-- Si piden "copy outs", "textos de ads", "la pauta", "excel de pauta" → generá excel_pauta con la estructura operativa completa
+- Si piden "copy outs", "textos de ads", "la pauta", "excel de pauta" → generá excel_pauta con la estructura operativa completa (formato Natura: TOC + tabs por entrega/etapa, con plataformas Meta/TikTok/YouTube/DV360 y sus copy fields específicos)
 - Si piden "testing matrix", "qué testeo", "variaciones", "creative sprint" → generá testing_matrix
 - Siempre explicá tu razonamiento estratégico
 `;
@@ -221,7 +221,7 @@ export const TOOLS: Anthropic.Tool[] = [
             "testing_matrix",
           ],
           description:
-            "Tipo de entregable: guia (DOCX estratégico completo), guiones (DOCX scripts de producción), creator_briefs (DOCX briefs para creators), one_pager (DOCX concepto rápido), strategy_canvas (DOCX mapa estratégico), brief_template (DOCX para aprobación del cliente), content_calendar (XLSX calendario editorial), storyboard (XLSX escenas), casting_grid (XLSX grid de creators), excel_pauta (XLSX copy outs de pauta con nomenclatura, límites de caracteres, formatos por plataforma — EL ENTREGABLE MÁS OPERATIVO), testing_matrix (XLSX matriz de testing creativo con variables, combinaciones y priorización)",
+            "Tipo de entregable: guia (DOCX estratégico completo), guiones (DOCX scripts de producción), creator_briefs (DOCX briefs para creators), one_pager (DOCX concepto rápido), strategy_canvas (DOCX mapa estratégico), brief_template (DOCX para aprobación del cliente), content_calendar (XLSX calendario editorial), storyboard (XLSX escenas), casting_grid (XLSX grid de creators), excel_pauta (XLSX copy outs formato Natura: tab TOC + tabs por E{n}|STAGE, nomenclatura Rufus, headers sage+azul, separadores violetas, copy fields con LEN(), slides carrusel en cols J-O — EL ENTREGABLE MÁS OPERATIVO), testing_matrix (XLSX matriz de testing creativo con variables, combinaciones y priorización)",
         },
         client_name: { type: "string", description: "Nombre del cliente" },
         work_type: {

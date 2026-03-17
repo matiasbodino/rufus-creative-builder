@@ -1,10 +1,60 @@
 import ExcelJS from "exceljs";
 
-// ─── Brand constants ────────────────────────────────────────────
-const PURPLE = "653BEB";
-const DARK_BG = "1C0C45";
-const NEON_YELLOW = "E0E000";
-const FONT = "Calibri";
+// ─── Brand constants (Natura reference) ─────────────────────────
+const PURPLE = "653BEB"; // Platform color for Meta
+const LIGHT_PURPLE = "C1B1F7"; // Piece-type separator + TOC headers
+const HEADER_BLUE = "C9DAF8"; // Column header row fill
+const SAGE_BG = "D9DAC8"; // Row 1-2 title background
+const GREEN_FORMATS = "D9EAD3"; // Formats column highlight
+const WHITE = "FFFFFF";
+const DARK_TEXT = "06083F"; // Dark text color
+const FONT = "Instrument Sans";
+
+// ─── Platform color map (exact from Natura Excel) ───────────────
+const PLATFORM_COLORS: Record<string, string> = {
+  Meta: `FF${PURPLE}`,
+  TikTok: "FFFF9900",
+  YouTube: "FFF9CB9C",
+  DV360: "FFCFE2F3",
+  Spotify: "FF1DB954",
+  Seedtag: "FF6366F1",
+  RCN: "FFEAD1DC",
+  THANSKTOYOU: "FFD9D2E9",
+};
+
+// ─── Platform-specific default copy field definitions ───────────
+const PLATFORM_COPY_FIELDS: Record<string, { field_name: string; char_limit: number }[]> = {
+  Meta_VID: [
+    { field_name: "Título", char_limit: 25 },
+    { field_name: "Texto principal", char_limit: 120 },
+    { field_name: "Descripción", char_limit: 120 },
+  ],
+  Meta_IMG: [
+    { field_name: "Título", char_limit: 25 },
+    { field_name: "Texto principal", char_limit: 120 },
+    { field_name: "Descripción", char_limit: 120 },
+  ],
+  Meta_CAR: [
+    { field_name: "Título", char_limit: 25 },
+    { field_name: "Texto principal", char_limit: 120 },
+    { field_name: "Descripción", char_limit: 120 },
+  ],
+  TikTok_VID: [{ field_name: "Texto", char_limit: 100 }],
+  TikTok_IMG: [{ field_name: "Texto", char_limit: 100 }],
+  YouTube_VID: [
+    { field_name: "CTA", char_limit: 10 },
+    { field_name: "Título", char_limit: 15 },
+  ],
+};
+
+const PLATFORM_DELIVERY_FORMATS: Record<string, string[]> = {
+  Meta: ["1080x1920", "1080x1350", "1080x1080"],
+  TikTok: ["1080x1920"],
+  YouTube: ["1920x1080", "1080x1920"],
+  DV360: ["120x600", "160x600", "300x250", "300x600", "728x90", "970x250", "320x480"],
+  Spotify: ["640x640", "300x250"],
+  Seedtag: ["587x330", "350x525", "587x100", "350x80"],
+};
 
 // ─── Shared styling helpers ─────────────────────────────────────
 
@@ -20,7 +70,7 @@ function headerStyle(ws: ExcelJS.Worksheet, row: ExcelJS.Row, colCount: number) 
       fgColor: { argb: `FF${PURPLE}` },
     };
     cell.border = {
-      bottom: { style: "thin", color: { argb: `FF${DARK_BG}` } },
+      bottom: { style: "thin", color: { argb: "FF1C0C45" } },
     };
   }
 }
@@ -301,51 +351,7 @@ export async function generateCastingGrid(
   return Buffer.from(buffer);
 }
 
-// ─── 4. EXCEL PAUTA (Copy Outs) ─────────────────────────────────
-
-// Platform color map for visual differentiation
-const PLATFORM_COLORS: Record<string, string> = {
-  Meta: "FF1877F2",
-  TikTok: "FF010101",
-  YouTube: "FFFF0000",
-  DV360: "FF34A853",
-  Spotify: "FF1DB954",
-  Seedtag: "FF6366F1",
-};
-
-// Platform-specific default copy field definitions
-const PLATFORM_COPY_FIELDS: Record<string, { field_name: string; char_limit: number }[]> = {
-  Meta_VID: [
-    { field_name: "Título", char_limit: 25 },
-    { field_name: "Texto principal", char_limit: 120 },
-    { field_name: "Descripción", char_limit: 120 },
-  ],
-  Meta_IMG: [
-    { field_name: "Título", char_limit: 25 },
-    { field_name: "Texto principal", char_limit: 120 },
-    { field_name: "Descripción", char_limit: 120 },
-  ],
-  Meta_CAR: [
-    { field_name: "Título", char_limit: 25 },
-    { field_name: "Texto principal", char_limit: 120 },
-    { field_name: "Descripción", char_limit: 120 },
-  ],
-  TikTok_VID: [{ field_name: "Texto", char_limit: 100 }],
-  TikTok_IMG: [{ field_name: "Texto", char_limit: 100 }],
-  YouTube_VID: [
-    { field_name: "CTA", char_limit: 10 },
-    { field_name: "Título", char_limit: 15 },
-  ],
-};
-
-const PLATFORM_DELIVERY_FORMATS: Record<string, string[]> = {
-  Meta: ["1080x1920", "1080x1350", "1080x1080"],
-  TikTok: ["1080x1920"],
-  YouTube: ["1920x1080", "1080x1920"],
-  DV360: ["120x600", "160x600", "300x250", "300x600", "728x90", "970x250", "320x480"],
-  Spotify: ["640x640", "300x250"],
-  Seedtag: ["587x330", "350x525", "587x100", "350x80"],
-};
+// ─── 4. EXCEL PAUTA (Copy Outs) — Natura reference format ───────
 
 function buildNomenclature(
   brand: string,
@@ -368,6 +374,142 @@ function buildNomenclature(
   return `Rufus_${brandSlug}_E${deliveryNum}_${stageName}${platform}${pieceType}_${format}___${version}`;
 }
 
+// Helper: apply sage background to title rows 1-2
+function applyTitleRows(
+  ws: ExcelJS.Worksheet,
+  titleText: string,
+  stageText: string,
+  colSpan: number
+) {
+  // Row 1: Campaign title
+  ws.mergeCells(1, 1, 1, colSpan);
+  const titleCell = ws.getCell("A1");
+  titleCell.value = titleText;
+  titleCell.font = { name: FONT, size: 11, bold: true, color: { theme: 1 } };
+  titleCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  titleCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: `FF${SAGE_BG}` },
+  };
+
+  // Row 2: Stage name
+  ws.mergeCells(2, 1, 2, colSpan);
+  const stageCell = ws.getCell("A2");
+  stageCell.value = stageText;
+  stageCell.font = { name: FONT, size: 9, bold: true, color: { theme: 1 } };
+  stageCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  stageCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: `FF${SAGE_BG}` },
+  };
+}
+
+// Helper: apply column header rows 3-4
+function applyColumnHeaders(ws: ExcelJS.Worksheet) {
+  // Merge rows 3-4 for each header column
+  // A: PLATAFORMA, B: NOMENCLATURA, C: PREVIEW, D: LINK, E: FORMATOS
+  const leftHeaders = [
+    { col: 1, label: "PLATAFORMA" },
+    { col: 2, label: "NOMENCLATURA" },
+    { col: 3, label: "PREVIEW" },
+    { col: 4, label: "LINK" },
+    { col: 5, label: "FORMATOS" },
+  ];
+
+  leftHeaders.forEach(({ col, label }) => {
+    ws.mergeCells(3, col, 4, col);
+    const cell = ws.getCell(3, col);
+    cell.value = label;
+    cell.font = { name: FONT, size: 9, bold: true, color: { argb: `FF${DARK_TEXT}` } };
+    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: `FF${HEADER_BLUE}` },
+    };
+  });
+
+  // F-H: COPY OUTS (merged across F3:H4)
+  ws.mergeCells(3, 6, 4, 8);
+  const copyCell = ws.getCell(3, 6);
+  copyCell.value = "COPY OUTS";
+  copyCell.font = { name: FONT, bold: true, color: { theme: 1 } };
+  copyCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  copyCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { theme: 4 },
+  };
+
+  // I: LINK YOUTUBE (merged I3:I4)
+  ws.mergeCells(3, 9, 4, 9);
+  const ytCell = ws.getCell(3, 9);
+  ytCell.value = "LINK YOUTUBE";
+  ytCell.font = { name: FONT, bold: true, color: { theme: 1 } };
+  ytCell.alignment = { vertical: "middle" };
+  ytCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { theme: 5 },
+  };
+}
+
+// Helper: create piece-type separator row (e.g. "VIDEO ANIMADO PRODUCTO")
+function addPieceTypeSeparator(
+  ws: ExcelJS.Worksheet,
+  rowNum: number,
+  label: string,
+  hasSlides: boolean
+) {
+  // Merge B:E for the label
+  ws.mergeCells(rowNum, 2, rowNum, 5);
+  const labelCell = ws.getCell(rowNum, 2);
+  labelCell.value = label;
+  labelCell.font = { name: FONT, size: 9, bold: true, color: { argb: "FFFFFFFF" } };
+  labelCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  labelCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: `FF${LIGHT_PURPLE}` },
+  };
+
+  // F5-style: "Tipo de texto" label
+  const typeCell = ws.getCell(rowNum, 6);
+  typeCell.value = "Tipo de texto";
+  typeCell.font = { name: FONT, color: { theme: 1 } };
+  typeCell.alignment = { horizontal: "center", vertical: "middle" };
+
+  // H: "WC" label
+  const wcCell = ws.getCell(rowNum, 8);
+  wcCell.value = "WC";
+  wcCell.font = { name: FONT, size: 9, bold: true, color: { argb: `FF${DARK_TEXT}` } };
+  wcCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+  // I: "-"
+  const iCell = ws.getCell(rowNum, 9);
+  iCell.value = "-";
+  iCell.font = { name: FONT, color: { theme: 1 } };
+  iCell.alignment = { horizontal: "center", vertical: "middle" };
+
+  ws.getRow(rowNum).height = 18;
+
+  // If carousel, add "Descripción por slide" header in J-O
+  if (hasSlides) {
+    ws.mergeCells(rowNum, 10, rowNum, 15);
+    const slideHeaderCell = ws.getCell(rowNum, 10);
+    slideHeaderCell.value = "Descripción por slide";
+    slideHeaderCell.font = { name: FONT, size: 9, bold: true, color: { argb: "FFFFFFFF" } };
+    slideHeaderCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    slideHeaderCell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: `FF${LIGHT_PURPLE}` },
+    };
+  }
+}
+
 export async function generateExcelPauta(
   data: XlsxDeliverableData
 ): Promise<Buffer> {
@@ -380,51 +522,111 @@ export async function generateExcelPauta(
 
   if (!pauta || !pauta.deliveries || pauta.deliveries.length === 0) {
     // Generate a placeholder structure
-    const ws = wb.addWorksheet(`${clientName} | TOC`);
-    brandTitle(ws, `${clientName} ${campaignName} | COPY OUTS`, 5);
+    const tocName = `${clientName.toUpperCase()} ${campaignName.toUpperCase()} CO | T`.substring(0, 31);
+    const ws = wb.addWorksheet(tocName);
     ws.columns = [
-      { width: 5 },
-      { width: 30 },
-      { width: 20 },
-      { width: 16 },
-      { width: 20 },
+      { width: 3.63 },
+      { width: 21 },
+      { width: 20.25 },
+      { width: 17.25 },
+      { width: 19.75 },
     ];
-    const tocHeader = ws.addRow(["", "ENTREGA", "DRIVE", "STATUS", "EDITABLES"]);
-    headerStyle(ws, tocHeader, 5);
-    ws.addRow(["", "E1 | AWARENESS", "→ Sheet", "Pendiente", ""]);
-    ws.addRow(["", "E1 | CONSIDERACIÓN", "→ Sheet", "Pendiente", ""]);
-    altRowStyle(ws.getRow(4), 5, true);
-    altRowStyle(ws.getRow(5), 5, false);
+
+    // Row 2: TOC Headers
+    const tocHeaders = ["", "ENTREGA", "DRIVE", "STATUS", "EDITABLES"];
+    ws.getRow(2).height = 34.5;
+    tocHeaders.forEach((h, i) => {
+      if (i === 0) return;
+      const cell = ws.getCell(2, i + 1);
+      cell.value = h;
+      cell.font = { name: FONT, bold: true, color: { theme: 1 } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: `FF${LIGHT_PURPLE}` },
+      };
+    });
+
+    ws.getRow(3).height = 18;
+    ws.getCell("B3").value = "E1 | AWARENESS";
+    ws.getCell("B3").font = { name: FONT, bold: true, underline: true, color: { argb: "FF0000FF" } };
+    ws.getCell("B3").alignment = { horizontal: "center", vertical: "middle" };
+    ws.getCell("C3").value = "AWARENESS E1";
+    ws.getCell("D3").value = "Pendiente";
+    ws.getCell("D3").alignment = { horizontal: "center", vertical: "middle" };
+
+    ws.getRow(4).height = 18;
+    ws.getCell("B4").value = "E1 | CONSIDERACIÓN";
+    ws.getCell("B4").font = { name: FONT, bold: true, underline: true, color: { argb: "FF0000FF" } };
+    ws.getCell("B4").alignment = { horizontal: "center", vertical: "middle" };
+    ws.getCell("C4").value = "CONSIDERACIÓN E1";
+    ws.getCell("D4").value = "Pendiente";
+    ws.getCell("D4").alignment = { horizontal: "center", vertical: "middle" };
 
     const buffer = await wb.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }
 
   // ── TOC Tab ──
-  const tocWs = wb.addWorksheet(`${clientName} | TOC`.substring(0, 31));
+  const tocName = `${clientName.toUpperCase()} ${campaignName.toUpperCase()} CO | T`.substring(0, 31);
+  const tocWs = wb.addWorksheet(tocName);
   tocWs.columns = [
-    { width: 5 },
-    { width: 40 },
-    { width: 20 },
-    { width: 16 },
-    { width: 20 },
+    { width: 3.63 },
+    { width: 21 },
+    { width: 20.25 },
+    { width: 17.25 },
+    { width: 19.75 },
   ];
-  brandTitle(tocWs, `${clientName} ${campaignName} | COPY OUTS`, 5);
-  const tocHeaderRow = tocWs.addRow(["", "ENTREGA", "DRIVE", "STATUS", "EDITABLES"]);
-  headerStyle(tocWs, tocHeaderRow, 5);
 
-  let tocRowIdx = 0;
+  // Row 2: TOC Headers with light purple fill
+  tocWs.getRow(2).height = 34.5;
+  const tocHeaderLabels = ["ENTREGA", "DRIVE", "STATUS", "EDITABLES"];
+  tocHeaderLabels.forEach((h, i) => {
+    const cell = tocWs.getCell(2, i + 2); // B2, C2, D2, E2
+    cell.value = h;
+    cell.font = { name: FONT, bold: true, color: { theme: 1 } };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: `FF${LIGHT_PURPLE}` },
+    };
+  });
+
+  // TOC entries starting at row 3
+  let tocRow = 3;
   pauta.deliveries.forEach((delivery, dIdx) => {
     delivery.funnel_stages.forEach((stage) => {
-      const row = tocWs.addRow([
-        "",
-        `E${dIdx + 1} | ${delivery.audience || ""} ${stage.stage.toUpperCase()}`.trim(),
-        `→ Sheet`,
-        "Pendiente",
-        "",
-      ]);
-      altRowStyle(row, 5, tocRowIdx % 2 === 0);
-      tocRowIdx++;
+      const stageAbbrev = stage.stage.toUpperCase().substring(0, 3);
+      const entregaLabel = `E${dIdx + 1} | ${delivery.audience || ""} ${stageAbbrev}`.trim();
+      const stageSheetLabel = `${stage.stage.toUpperCase()} E${dIdx + 1}`;
+
+      tocWs.getRow(tocRow).height = 18;
+
+      const bCell = tocWs.getCell(tocRow, 2);
+      bCell.value = entregaLabel;
+      bCell.font = { name: FONT, bold: true, underline: true, color: { argb: "FF0000FF" } };
+      bCell.alignment = { horizontal: "center", vertical: "middle" };
+
+      const cCell = tocWs.getCell(tocRow, 3);
+      cCell.value = stageSheetLabel;
+      cCell.font = { name: FONT, underline: true, color: { theme: 1 } };
+      cCell.alignment = { horizontal: "center", vertical: "middle" };
+
+      const dCell = tocWs.getCell(tocRow, 4);
+      dCell.value = "Pendiente";
+      dCell.font = { name: FONT, color: { theme: 1 } };
+      dCell.alignment = { horizontal: "center", vertical: "middle" };
+
+      const eCell = tocWs.getCell(tocRow, 5);
+      eCell.value = "";
+      eCell.font = { name: FONT, color: { theme: 1 } };
+      eCell.alignment = { horizontal: "center", vertical: "middle" };
+
+      // Merge STATUS and EDITABLES for pairs of stages
+      // The real Excel merges D and E for each pair of AW/CON rows per delivery
+      tocRow++;
     });
   });
 
@@ -433,155 +635,280 @@ export async function generateExcelPauta(
     delivery.funnel_stages.forEach((stage) => {
       const rawName = `E${dIdx + 1} | ${stage.stage.toUpperCase()}`;
       const sheetName = rawName.substring(0, 31);
-      const ws = wb.addWorksheet(sheetName, {
-        views: [{ state: "frozen", ySplit: 3 }],
-      });
+      const ws = wb.addWorksheet(sheetName);
 
-      // Columns: A=Platform, B=Nomenclature, C=Preview, D=Link/Type, E=Formats, F=Copy Type, G=Copy, H=WC, I=Link YT
-      ws.columns = [
-        { width: 14 },
-        { width: 52 },
-        { width: 10 },
-        { width: 22 },
-        { width: 22 },
-        { width: 26 },
-        { width: 55 },
-        { width: 6 },
-        { width: 16 },
-      ];
+      // Column widths (matching Natura reference)
+      ws.getColumn(1).width = 8.5;   // A: PLATAFORMA
+      ws.getColumn(2).width = 26.75;  // B: NOMENCLATURA
+      ws.getColumn(3).width = 23.63;  // C: PREVIEW
+      ws.getColumn(4).width = 15.63;  // D: LINK
+      ws.getColumn(5).width = 15.88;  // E: FORMATOS
+      ws.getColumn(6).width = 15.88;  // F: Copy type
+      ws.getColumn(7).width = 28.88;  // G: Copy text
+      ws.getColumn(8).width = 13;     // H: WC
+      ws.getColumn(9).width = 15;     // I: LINK YOUTUBE
+      // J-O for carousel slide descriptions
+      for (let c = 10; c <= 15; c++) {
+        ws.getColumn(c).width = 20;
+      }
 
-      // Header rows
-      ws.mergeCells(1, 1, 1, 9);
-      const titleCell = ws.getCell("A1");
-      titleCell.value = `${clientName} ${campaignName} | ${delivery.audience || ""}`.trim();
-      titleCell.font = { name: FONT, size: 13, bold: true, color: { argb: `FF${PURPLE}` } };
-      ws.getRow(1).height = 32;
+      // Row 1-2: Title rows
+      const audienceLabel = delivery.audience ? ` | ${delivery.audience.toUpperCase()}` : "";
+      const titleText = `${clientName.toUpperCase()} ${campaignName.toUpperCase()}${audienceLabel}`;
+      applyTitleRows(ws, titleText, stage.stage.toUpperCase(), 9);
 
-      ws.mergeCells(2, 1, 2, 9);
-      const stageCell = ws.getCell("A2");
-      stageCell.value = stage.stage.toUpperCase();
-      stageCell.font = { name: FONT, size: 11, bold: true, color: { argb: `FF${DARK_BG}` } };
-      ws.getRow(2).height = 24;
+      // Row 3-4: Column headers
+      applyColumnHeaders(ws);
 
-      const colHeaders = [
-        "PLATAFORMA", "NOMENCLATURA", "PREVIEW", "LINK", "FORMATOS",
-        "COPY OUTS", "", "", "LINK YOUTUBE",
-      ];
-      const hRow = ws.addRow(colHeaders);
-      headerStyle(ws, hRow, colHeaders.length);
-
-      // Group pieces by platform
+      // Group pieces by platform for proper rendering
       const byPlatform: Record<string, typeof stage.pieces> = {};
       stage.pieces.forEach((piece) => {
         if (!byPlatform[piece.platform]) byPlatform[piece.platform] = [];
         byPlatform[piece.platform].push(piece);
       });
 
-      let currentRow = 4;
+      // Group within platform by piece_type+format to create separator rows
+      let currentRow = 5; // Data starts at row 5
       const platformNames = Object.keys(byPlatform);
 
       platformNames.forEach((platformName) => {
         const pieces = byPlatform[platformName];
         const platformStartRow = currentRow;
 
+        // Group pieces by their display type (e.g. "VIDEO ANIMADO PRODUCTO", "VIDEO UCG", "CARRUSEL PRODUCTO")
+        const pieceGroups: { label: string; pieces: typeof pieces; isCarousel: boolean }[] = [];
+        const groupMap = new Map<string, typeof pieces>();
+
         pieces.forEach((piece) => {
-          const nomenclature = buildNomenclature(
-            clientName,
-            dIdx + 1,
-            stage.stage,
-            platformName,
-            piece.piece_type,
-            piece.format,
-            piece.version
-          );
-
-          const deliveryFormats = piece.delivery_formats
-            || PLATFORM_DELIVERY_FORMATS[platformName]
-            || [];
-
-          // Use provided copy_fields or fall back to platform defaults
-          const copyFields = piece.copy_fields.length > 0
-            ? piece.copy_fields
-            : (PLATFORM_COPY_FIELDS[`${platformName}_${piece.format}`] || []).map((f) => ({
-                ...f,
-                copy: "",
-              }));
-
-          if (copyFields.length === 0) {
-            // Platforms with no copy (DV360, Spotify, Seedtag)
-            const row = ws.addRow([
-              "",
-              nomenclature,
-              "",
-              `${piece.piece_type} ${piece.format}`,
-              deliveryFormats.join("\n"),
-              "Sin copy",
-              "",
-              "",
-              "",
-            ]);
-            row.font = { name: FONT, size: 10 };
-            row.alignment = { vertical: "middle", wrapText: true };
-            row.height = 24;
-            currentRow++;
-          } else {
-            copyFields.forEach((cf, cfIdx) => {
-              const row = ws.addRow([
-                "",
-                cfIdx === 0 ? nomenclature : "",
-                cfIdx === 0 ? "" : "",
-                cfIdx === 0 ? `${piece.piece_type} ${piece.format}` : "",
-                cfIdx === 0 ? deliveryFormats.join("\n") : "",
-                `${cf.field_name} (${cf.char_limit})`,
-                cf.copy,
-                cf.copy ? cf.copy.length : 0,
-                "",
-              ]);
-              row.font = { name: FONT, size: 10 };
-              row.alignment = { vertical: "middle", wrapText: true };
-              row.height = cfIdx === 0 ? 28 : 24;
-
-              // Highlight if copy exceeds limit
-              if (cf.copy && cf.copy.length > cf.char_limit) {
-                row.getCell(7).font = {
-                  name: FONT, size: 10, color: { argb: "FFDC2626" }, bold: true,
-                };
-                row.getCell(8).font = {
-                  name: FONT, size: 10, color: { argb: "FFDC2626" }, bold: true,
-                };
-              }
-
-              currentRow++;
-            });
-
-            // Carousel slide descriptions
-            if (piece.format === "CAR" && piece.slide_descriptions) {
-              piece.slide_descriptions.forEach((desc, sIdx) => {
-                const row = ws.addRow([
-                  "", "", "", "", "",
-                  `Slide ${sIdx + 1}`,
-                  desc,
-                  desc.length,
-                  "",
-                ]);
-                row.font = { name: FONT, size: 10 };
-                row.alignment = { vertical: "middle", wrapText: true };
-                row.height = 24;
-                currentRow++;
-              });
-            }
-          }
+          const formatLabel = piece.format === "CAR" ? "CARRUSEL" : piece.format === "VID" ? "VIDEO ANIMADO" : "Estática";
+          const typeLabel = piece.piece_type === "UGC" ? "UCG" : piece.piece_type === "CRE" ? "UCG" : piece.piece_type.toUpperCase();
+          const key = `${formatLabel} ${typeLabel}`;
+          if (!groupMap.has(key)) groupMap.set(key, []);
+          groupMap.get(key)!.push(piece);
         });
 
-        // Merge platform column for all rows of this platform
+        groupMap.forEach((groupPieces, label) => {
+          pieceGroups.push({
+            label,
+            pieces: groupPieces,
+            isCarousel: label.startsWith("CARRUSEL"),
+          });
+        });
+
+        pieceGroups.forEach((group) => {
+          // Add piece-type separator row
+          addPieceTypeSeparator(ws, currentRow, group.label, group.isCarousel);
+          currentRow++;
+
+          group.pieces.forEach((piece) => {
+            const nomenclature = buildNomenclature(
+              clientName,
+              dIdx + 1,
+              stage.stage,
+              platformName,
+              piece.piece_type,
+              piece.format,
+              piece.version
+            );
+
+            const deliveryFormats = piece.delivery_formats
+              || PLATFORM_DELIVERY_FORMATS[platformName]
+              || [];
+
+            // Use provided copy_fields or fall back to platform defaults
+            const copyFields = piece.copy_fields.length > 0
+              ? piece.copy_fields
+              : (PLATFORM_COPY_FIELDS[`${platformName}_${piece.format}`] || []).map((f) => ({
+                  ...f,
+                  copy: "",
+                }));
+
+            const pieceStartRow = currentRow;
+
+            if (copyFields.length === 0) {
+              // Platforms with no copy (DV360, Spotify, Seedtag) - still 3 merged rows
+              const numRows = 3;
+              for (let r = 0; r < numRows; r++) {
+                const rowNum = currentRow + r;
+                const row = ws.getRow(rowNum);
+                row.height = 24;
+
+                // F, G, H, I = "-"
+                ws.getCell(rowNum, 6).value = "-";
+                ws.getCell(rowNum, 6).font = { name: FONT, color: { theme: 1 } };
+                ws.getCell(rowNum, 6).alignment = { horizontal: "center", vertical: "middle" };
+                if (r === 0) {
+                  ws.getCell(rowNum, 6).fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${WHITE}` } };
+                }
+                ws.getCell(rowNum, 7).value = "-";
+                ws.getCell(rowNum, 8).value = "-";
+                ws.getCell(rowNum, 9).value = "-";
+              }
+
+              // Merge B, C, D, E across all rows
+              if (numRows > 1) {
+                ws.mergeCells(pieceStartRow, 2, pieceStartRow + numRows - 1, 2);
+                if (piece.format !== "CAR") {
+                  ws.mergeCells(pieceStartRow, 3, pieceStartRow + numRows - 1, 3);
+                }
+                ws.mergeCells(pieceStartRow, 4, pieceStartRow + numRows - 1, 4);
+                ws.mergeCells(pieceStartRow, 5, pieceStartRow + numRows - 1, 5);
+                ws.mergeCells(pieceStartRow, 9, pieceStartRow + numRows - 1, 9);
+              }
+
+              // Set nomenclature
+              const nCell = ws.getCell(pieceStartRow, 2);
+              nCell.value = nomenclature;
+              nCell.font = { name: FONT, size: 9, color: { theme: 1 } };
+              nCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+              // Link in D
+              const dCell = ws.getCell(pieceStartRow, 4);
+              dCell.value = `${piece.piece_type} ${piece.format}`;
+              dCell.font = { name: FONT, size: 9, color: { argb: "FF1155CC" }, underline: true };
+              dCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+              // Formats in E with green background
+              const eCell = ws.getCell(pieceStartRow, 5);
+              eCell.value = deliveryFormats.join("\n");
+              eCell.font = { name: FONT, size: 8, color: { theme: 1 } };
+              eCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+              eCell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: `FF${GREEN_FORMATS}` },
+              };
+
+              currentRow += numRows;
+            } else {
+              // Platforms with copy
+              const numCopyRows = copyFields.length;
+
+              copyFields.forEach((cf, cfIdx) => {
+                const rowNum = currentRow;
+                const row = ws.getRow(rowNum);
+                row.height = cfIdx === 0 ? 26.25 : 50;
+
+                // F: Copy type label (e.g. "Título (25)")
+                const fCell = ws.getCell(rowNum, 6);
+                fCell.value = `${cf.field_name} (${cf.char_limit})`;
+                fCell.font = { name: FONT, color: { theme: 1 } };
+                fCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+                if (cfIdx === 0 || cfIdx === 1) {
+                  fCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${WHITE}` } };
+                }
+
+                // G: Copy text
+                const gCell = ws.getCell(rowNum, 7);
+                gCell.value = cf.copy;
+                gCell.font = { name: FONT, color: { theme: 1 } };
+                gCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+                if (cfIdx === 0 || cfIdx === 1) {
+                  gCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${WHITE}` } };
+                }
+
+                // H: Word count (LEN formula)
+                const hCell = ws.getCell(rowNum, 8);
+                if (cf.copy) {
+                  hCell.value = { formula: `LEN(G${rowNum})` };
+                } else {
+                  hCell.value = 0;
+                }
+                hCell.font = { name: FONT, size: 9, color: { theme: 1 } };
+                hCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+                if (cfIdx === 0 || cfIdx === 1) {
+                  hCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${WHITE}` } };
+                }
+
+                // I: Link YouTube
+                const iCell = ws.getCell(rowNum, 9);
+                iCell.value = "-";
+                iCell.font = { name: FONT, color: { theme: 1 } };
+                iCell.alignment = { horizontal: "center", vertical: "middle" };
+
+                // Highlight if copy exceeds limit
+                if (cf.copy && cf.copy.length > cf.char_limit) {
+                  gCell.font = { name: FONT, color: { argb: "FFDC2626" }, bold: true };
+                  hCell.font = { name: FONT, size: 9, color: { argb: "FFDC2626" }, bold: true };
+                }
+
+                currentRow++;
+              });
+
+              // Merge B, D, E, I across all copy rows
+              if (numCopyRows > 1) {
+                ws.mergeCells(pieceStartRow, 2, pieceStartRow + numCopyRows - 1, 2);
+                ws.mergeCells(pieceStartRow, 3, pieceStartRow + numCopyRows - 1, 3);
+                ws.mergeCells(pieceStartRow, 4, pieceStartRow + numCopyRows - 1, 4);
+                ws.mergeCells(pieceStartRow, 5, pieceStartRow + numCopyRows - 1, 5);
+                ws.mergeCells(pieceStartRow, 9, pieceStartRow + numCopyRows - 1, 9);
+              }
+
+              // Set nomenclature in B
+              const nCell = ws.getCell(pieceStartRow, 2);
+              nCell.value = nomenclature;
+              nCell.font = { name: FONT, size: 9, color: { theme: 1 } };
+              nCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+              // Link in D
+              const dCell = ws.getCell(pieceStartRow, 4);
+              dCell.value = `${piece.piece_type} ${piece.format}`;
+              dCell.font = { name: FONT, size: 9, color: { argb: "FF1155CC" }, underline: true };
+              dCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+              // Formats in E with green background
+              const eCell = ws.getCell(pieceStartRow, 5);
+              eCell.value = deliveryFormats.join("\n");
+              eCell.font = { name: FONT, size: 8, color: { theme: 1 } };
+              eCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+              eCell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: `FF${GREEN_FORMATS}` },
+              };
+
+              // Carousel slide descriptions in columns J-O (row by row like Natura)
+              if (piece.format === "CAR" && piece.slide_descriptions) {
+                // Add slide number headers in the first copy row
+                piece.slide_descriptions.forEach((desc, sIdx) => {
+                  if (sIdx >= 6) return; // Max 6 slides (J-O)
+                  const slideCol = 10 + sIdx; // J=10, K=11, ...
+                  // Slide header in the title row
+                  const headerCell = ws.getCell(pieceStartRow, slideCol);
+                  headerCell.value = `Slide ${sIdx + 1}`;
+                  headerCell.font = { name: FONT, color: { theme: 1 } };
+                  headerCell.alignment = { horizontal: "center", vertical: "middle" };
+                });
+
+                // Slide content merged across the remaining copy rows
+                if (numCopyRows > 1) {
+                  piece.slide_descriptions.forEach((desc, sIdx) => {
+                    if (sIdx >= 6) return;
+                    const slideCol = 10 + sIdx;
+                    // Merge from second copy row to last copy row
+                    if (numCopyRows > 2) {
+                      ws.mergeCells(pieceStartRow + 1, slideCol, pieceStartRow + numCopyRows - 1, slideCol);
+                    }
+                    const slideCell = ws.getCell(pieceStartRow + 1, slideCol);
+                    slideCell.value = desc;
+                    slideCell.font = { name: FONT, color: { theme: 1 } };
+                    slideCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+                  });
+                }
+              }
+            }
+          });
+        });
+
+        // Merge and style platform column (A) for all rows of this platform
         if (currentRow > platformStartRow) {
           if (currentRow - 1 > platformStartRow) {
             ws.mergeCells(platformStartRow, 1, currentRow - 1, 1);
           }
           const platformCell = ws.getCell(platformStartRow, 1);
           platformCell.value = platformName.toUpperCase();
-          platformCell.font = { name: FONT, size: 11, bold: true, color: { argb: "FFFFFFFF" } };
-          platformCell.alignment = { vertical: "middle", horizontal: "center", textRotation: 90 };
+          platformCell.font = { name: FONT, size: 9, bold: true, color: { argb: "FFFFFFFF" } };
+          platformCell.alignment = { horizontal: "center", vertical: "middle", textRotation: 90, wrapText: true };
           const platformColor = PLATFORM_COLORS[platformName] || `FF${PURPLE}`;
           platformCell.fill = {
             type: "pattern",
@@ -628,7 +955,7 @@ export async function generateTestingMatrix(
     varWs.mergeCells(2, 1, 2, 5);
     const hypCell = varWs.getCell("A2");
     hypCell.value = `Hipótesis: ${matrix.hypothesis}`;
-    hypCell.font = { name: FONT, size: 11, italic: true, color: { argb: `FF${DARK_BG}` } };
+    hypCell.font = { name: FONT, size: 11, italic: true, color: { argb: "FF1C0C45" } };
     varWs.getRow(2).height = 28;
   }
 
