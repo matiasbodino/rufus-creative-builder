@@ -19,6 +19,9 @@ import {
 
 const anthropic = new Anthropic();
 
+// Vercel serverless max duration (seconds) — Hobby: 60s, Pro: 300s
+export const maxDuration = 60;
+
 const DOCX_TYPES = new Set<string>([
   "guia",
   "guiones",
@@ -103,7 +106,7 @@ async function handleToolUse(
 
   // Follow-up to get Claude's summary
   const followUp = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
     system: SYSTEM_PROMPT,
     tools: TOOLS as Anthropic.Tool[],
@@ -142,7 +145,7 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 8192,
       system: SYSTEM_PROMPT,
       tools: TOOLS as Anthropic.Tool[],

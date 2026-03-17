@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import mammoth from "mammoth";
 
+export const maxDuration = 30;
+
 async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
     const { PDFParse } = await import("pdf-parse");
