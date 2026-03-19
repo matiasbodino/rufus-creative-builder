@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { SYSTEM_PROMPT, TOOLS } from "@/lib/system-prompt";
 import { generateCase, CaseData } from "@/lib/generate-pptx";
 import {
@@ -53,25 +51,31 @@ function makeSlug(name: string): string {
     .replace(/-+$/, "");
 }
 
+interface FileResult {
+  base64: string;
+  filename: string;
+  label: string;
+  mimeType: string;
+}
+
 async function handleToolUse(
   toolBlock: Anthropic.ContentBlock & { type: "tool_use"; name: string; id: string; input: unknown },
-  response: Anthropic.Message,
-  messages: { role: string; content: string }[]
-): Promise<{ text: string; files: { url: string; label: string }[] }> {
-  const dir = path.join(process.cwd(), "public", "cases");
-  await mkdir(dir, { recursive: true });
-
-  const files: { url: string; label: string }[] = [];
-  let toolResultContent = "";
+): Promise<{ text: string; files: FileResult[] }> {
+  const files: FileResult[] = [];
+  let summaryText = "";
 
   if (toolBlock.name === "generate_case") {
     const caseData = toolBlock.input as unknown as CaseData;
     const buffer = await generateCase(caseData);
     const slug = makeSlug(caseData.client_name);
     const filename = `case-${slug}-${Date.now()}.pptx`;
-    await writeFile(path.join(dir, filename), buffer);
-    files.push({ url: `/cases/${filename}`, label: "Descargar caso (.pptx)" });
-    toolResultContent = `Caso PPTX generado exitosamente: ${filename}. Tipo: ${caseData.work_type}. Cliente: ${caseData.client_name}. Niveles activos: ${caseData.active_levels?.join(", ")}. ${caseData.pillars.length} pilares de contenido.`;
+    files.push({
+      base64: Buffer.from(buffer).toString("base64"),
+      filename,
+      label: "Descargar caso (.pptx)",
+      mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    });
+    summaryText = `Caso PPTX generado para ${caseData.client_name}. Tipo: ${caseData.work_type}. ${caseData.pillars?.length || 0} pilares de contenido. El archivo está listo para descargar.`;
   } else if (toolBlock.name === "generate_deliverable") {
     const input = toolBlock.input as Record<string, unknown>;
     const deliverableType = input.deliverable_type as string;
@@ -85,78 +89,47 @@ async function handleToolUse(
         input as unknown as DeliverableData
       );
       const filename = `${deliverableType}-${slug}-${ts}.docx`;
-      await writeFile(path.join(dir, filename), buffer);
       const label = DOCX_LABELS[deliverableType as DocxDeliverableType];
-      files.push({ url: `/cases/${filename}`, label: `Descargar ${label} (.docx)` });
-      toolResultContent = `${label} DOCX generado exitosamente: ${filename}. Cliente: ${clientName}.`;
+      files.push({
+        base64: Buffer.from(buffer).toString("base64"),
+        filename,
+        label: `Descargar ${label} (.docx)`,
+        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+      summaryText = `${label} DOCX generado para ${clientName}. El archivo está listo para descargar.`;
     } else if (XLSX_TYPES.has(deliverableType)) {
       const buffer = await generateXlsx(
         deliverableType as XlsxDeliverableType,
         input as unknown as XlsxDeliverableData
       );
       const filename = `${deliverableType}-${slug}-${ts}.xlsx`;
-      await writeFile(path.join(dir, filename), buffer);
       const label = XLSX_LABELS[deliverableType as XlsxDeliverableType];
-      files.push({ url: `/cases/${filename}`, label: `Descargar ${label} (.xlsx)` });
-      toolResultContent = `${label} XLSX generado exitosamente: ${filename}. Cliente: ${clientName}.`;
+      files.push({
+        base64: Buffer.from(buffer).toString("base64"),
+        filename,
+        label: `Descargar ${label} (.xlsx)`,
+        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      summaryText = `${label} XLSX generado para ${clientName}. El archivo está listo para descargar.`;
     } else {
-      toolResultContent = `Error: tipo de entregable desconocido: ${deliverableType}`;
+      summaryText = `Tipo de entregable no reconocido: ${deliverableType}`;
     }
   }
 
-  // Follow-up to get Claude's summary
-  const followUp = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 4096,
-    system: SYSTEM_PROMPT,
-    tools: TOOLS as Anthropic.Tool[],
-    messages: [
-      ...messages.map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
-      { role: "assistant" as const, content: response.content },
-      {
-        role: "user" as const,
-        content: [
-          {
-            type: "tool_result" as const,
-            tool_use_id: toolBlock.id,
-            content: toolResultContent,
-          },
-        ],
-      },
-    ],
-  });
-
-  const text = followUp.content
-    .filter(
-      (b): b is Anthropic.ContentBlock & { type: "text" } =>
-        b.type === "text"
-    )
-    .map((b) => b.text)
-    .join("\n");
-
-  return { text, files };
+  return { text: summaryText, files };
 }
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    // Sanitize messages for Claude API:
-    // 1. Must start with "user"
-    // 2. Roles must alternate (no consecutive same-role messages)
-    // 3. Filter out system/error messages
+    // Sanitize messages for Claude API
     const sanitized: { role: "user" | "assistant"; content: string }[] = [];
     for (const m of messages) {
       const role = m.role as "user" | "assistant";
       const content = m.content as string;
-      if (!content || content.startsWith("⚠️")) continue; // skip error messages
-
-      if (sanitized.length === 0 && role !== "user") continue; // must start with user
-
-      // Merge consecutive same-role messages
+      if (!content || content.startsWith("⚠️")) continue;
+      if (sanitized.length === 0 && role !== "user") continue;
       if (sanitized.length > 0 && sanitized[sanitized.length - 1].role === role) {
         sanitized[sanitized.length - 1].content += "\n\n" + content;
       } else {
@@ -164,7 +137,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Ensure we have at least one message
     if (sanitized.length === 0) {
       return NextResponse.json({ message: "No se recibió ningún mensaje. Escribí algo para empezar." });
     }
@@ -189,16 +161,30 @@ export async function POST(req: Request) {
         (toolBlock.name === "generate_case" ||
           toolBlock.name === "generate_deliverable")
       ) {
+        // Get any text Claude wrote before calling the tool
+        const preToolText = response.content
+          .filter(
+            (b): b is Anthropic.ContentBlock & { type: "text" } =>
+              b.type === "text"
+          )
+          .map((b) => b.text)
+          .join("\n");
+
         const result = await handleToolUse(
           toolBlock as Anthropic.ContentBlock & { type: "tool_use"; name: string; id: string; input: unknown },
-          response,
-          messages
         );
 
+        // Combine pre-tool text with summary (no second Claude call needed)
+        const finalText = [preToolText, result.text].filter(Boolean).join("\n\n");
+
         return NextResponse.json({
-          message: result.text,
-          file: result.files[0]?.url,
-          files: result.files,
+          message: finalText,
+          files: result.files.map((f) => ({
+            base64: f.base64,
+            filename: f.filename,
+            label: f.label,
+            mimeType: f.mimeType,
+          })),
         });
       }
     }
@@ -213,10 +199,11 @@ export async function POST(req: Request) {
       .join("\n");
 
     return NextResponse.json({ message: text });
-  } catch (err) {
-    console.error("Chat error:", err);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("Chat error:", errorMessage, err);
     return NextResponse.json(
-      { error: "Error procesando la solicitud" },
+      { error: `Error procesando la solicitud: ${errorMessage}` },
       { status: 500 }
     );
   }

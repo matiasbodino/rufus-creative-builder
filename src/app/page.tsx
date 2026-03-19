@@ -227,11 +227,34 @@ export default function Home() {
 
       const data = await res.json();
 
+      // Convert base64 files to blob URLs for download
+      let downloadFiles: { url: string; label: string }[] | undefined;
+      if (data.files && data.files.length > 0) {
+        downloadFiles = data.files.map((f: { base64?: string; filename: string; label: string; mimeType?: string; url?: string }) => {
+          if (f.base64) {
+            // New base64 format — create blob URL
+            const bytes = Uint8Array.from(atob(f.base64), (c) => c.charCodeAt(0));
+            const blob = new Blob([bytes], { type: f.mimeType || "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+            // Trigger download
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = f.filename;
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            return { url, label: f.label };
+          }
+          // Legacy format (url string)
+          return { url: f.url || "", label: f.label };
+        });
+      }
+
       const assistantMsg: (typeof messages)[number] = {
         role: "assistant",
         content: data.message || data.error || "Error desconocido",
-        file: data.file,
-        files: data.files,
+        files: downloadFiles,
       };
 
       const updated = [...newMessages, assistantMsg];
