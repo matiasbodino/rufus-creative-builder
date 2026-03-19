@@ -13,6 +13,7 @@ import {
   deriveTitle,
 } from "@/lib/conversations";
 import { loadTheme, saveTheme } from "@/lib/theme";
+import { DeliverableRecord, loadDeliverables, saveDeliverable } from "@/lib/deliverables";
 
 interface AttachedFile {
   name: string;
@@ -31,6 +32,7 @@ export default function Home() {
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [deliverables, setDeliverables] = useState<DeliverableRecord[]>([]);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +44,7 @@ export default function Home() {
     setTheme(t);
     document.documentElement.setAttribute("data-theme", t);
     setConversations(loadConversations());
+    setDeliverables(loadDeliverables());
   }, []);
 
   // Scroll on new messages
@@ -264,6 +267,23 @@ export default function Home() {
       setConversations((prev) =>
         prev.map((c) => (c.id === convId ? { ...c, messages: updated } : c))
       );
+
+      // Track deliverables in library
+      if (data.files && data.files.length > 0 && convId) {
+        const convTitle = conversations.find((c) => c.id === convId)?.title || "Caso";
+        for (const f of data.files) {
+          const record: DeliverableRecord = {
+            id: `${convId}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            filename: f.filename || "archivo",
+            label: f.label || "Archivo",
+            conversationId: convId,
+            conversationTitle: convTitle,
+            createdAt: new Date().toISOString(),
+          };
+          saveDeliverable(record);
+        }
+        setDeliverables(loadDeliverables());
+      }
     } catch (err) {
       console.error("Fetch error:", err);
       const errorDetail = err instanceof Error ? err.message : "Error desconocido";
@@ -292,6 +312,7 @@ export default function Home() {
         onDelete={deleteConversation}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        deliverables={deliverables}
       />
 
       <main className="flex-1 flex flex-col min-w-0">

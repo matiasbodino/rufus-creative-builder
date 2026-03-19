@@ -1,8 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { Conversation, groupConversations } from "@/lib/conversations";
+import { DeliverableRecord } from "@/lib/deliverables";
 import SidebarSection from "./SidebarSection";
 import ConversationItem from "./ConversationItem";
+import DeliverableLibrary from "./DeliverableLibrary";
+
+type Tab = "cases" | "library";
 
 export default function Sidebar({
   conversations,
@@ -14,6 +19,7 @@ export default function Sidebar({
   onDelete,
   sidebarOpen,
   setSidebarOpen,
+  deliverables,
 }: {
   conversations: Conversation[];
   activeId: string | null;
@@ -24,8 +30,10 @@ export default function Sidebar({
   onDelete: (id: string) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+  deliverables: DeliverableRecord[];
 }) {
   const { starred, today, previous } = groupConversations(conversations);
+  const [tab, setTab] = useState<Tab>("cases");
 
   return (
     <>
@@ -66,7 +74,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <div className="px-3 pb-3">
+        <div className="px-3 pb-2">
           <button
             onClick={onNew}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[var(--border)] text-[var(--text-secondary)] text-sm hover:bg-[var(--bg-surface)] transition-colors"
@@ -78,32 +86,77 @@ export default function Sidebar({
           </button>
         </div>
 
+        {/* Tabs */}
+        <div className="flex px-3 pb-2 gap-1">
+          <button
+            onClick={() => setTab("cases")}
+            className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors ${
+              tab === "cases"
+                ? "bg-[var(--bg-surface)] text-[var(--text-primary)]"
+                : "text-[var(--text-faint)] hover:text-[var(--text-muted)]"
+            }`}
+          >
+            Casos
+          </button>
+          <button
+            onClick={() => setTab("library")}
+            className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+              tab === "library"
+                ? "bg-[var(--bg-surface)] text-[var(--text-primary)]"
+                : "text-[var(--text-faint)] hover:text-[var(--text-muted)]"
+            }`}
+          >
+            Archivos
+            {deliverables.length > 0 && (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                tab === "library"
+                  ? "bg-[var(--accent)] text-white"
+                  : "bg-[var(--bg-surface-hover)] text-[var(--text-faint)]"
+              }`}>
+                {deliverables.length}
+              </span>
+            )}
+          </button>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-2 pb-4">
-          {starred.length > 0 && (
-            <SidebarSection title="Destacados">
-              {starred.map((c) => (
-                <ConversationItem key={c.id} conversation={c} active={c.id === activeId} onSelect={onSelect} onToggleStar={onToggleStar} onRename={onRename} onDelete={onDelete} />
-              ))}
-            </SidebarSection>
-          )}
-          {today.length > 0 && (
-            <SidebarSection title="Hoy">
-              {today.map((c) => (
-                <ConversationItem key={c.id} conversation={c} active={c.id === activeId} onSelect={onSelect} onToggleStar={onToggleStar} onRename={onRename} onDelete={onDelete} />
-              ))}
-            </SidebarSection>
-          )}
-          {previous.length > 0 && (
-            <SidebarSection title="Anteriores">
-              {previous.map((c) => (
-                <ConversationItem key={c.id} conversation={c} active={c.id === activeId} onSelect={onSelect} onToggleStar={onToggleStar} onRename={onRename} onDelete={onDelete} />
-              ))}
-            </SidebarSection>
-          )}
-          {conversations.length === 0 && (
-            <p className="text-[var(--text-faint)] text-xs text-center mt-12 px-4">
-              Tus casos van a aparecer acá
-            </p>
+          {tab === "cases" ? (
+            <>
+              {starred.length > 0 && (
+                <SidebarSection title="Destacados">
+                  {starred.map((c) => (
+                    <ConversationItem key={c.id} conversation={c} active={c.id === activeId} onSelect={onSelect} onToggleStar={onToggleStar} onRename={onRename} onDelete={onDelete} />
+                  ))}
+                </SidebarSection>
+              )}
+              {today.length > 0 && (
+                <SidebarSection title="Hoy">
+                  {today.map((c) => (
+                    <ConversationItem key={c.id} conversation={c} active={c.id === activeId} onSelect={onSelect} onToggleStar={onToggleStar} onRename={onRename} onDelete={onDelete} />
+                  ))}
+                </SidebarSection>
+              )}
+              {previous.length > 0 && (
+                <SidebarSection title="Anteriores">
+                  {previous.map((c) => (
+                    <ConversationItem key={c.id} conversation={c} active={c.id === activeId} onSelect={onSelect} onToggleStar={onToggleStar} onRename={onRename} onDelete={onDelete} />
+                  ))}
+                </SidebarSection>
+              )}
+              {conversations.length === 0 && (
+                <p className="text-[var(--text-faint)] text-xs text-center mt-12 px-4">
+                  Tus casos van a aparecer acá
+                </p>
+              )}
+            </>
+          ) : (
+            <DeliverableLibrary
+              deliverables={deliverables}
+              onGoToConversation={(id) => {
+                onSelect(id);
+                setTab("cases");
+              }}
+            />
           )}
         </div>
 
