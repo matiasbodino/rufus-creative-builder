@@ -16,7 +16,9 @@ import { loadTheme, saveTheme } from "@/lib/theme";
 import { DeliverableRecord, loadDeliverables, saveDeliverable } from "@/lib/deliverables";
 import {
   BrandProfile,
+  BrandFile,
   loadBrandVault,
+  saveBrandVault,
   detectClientName,
   getBrandProfile,
   formatBrandContext,
@@ -351,6 +353,48 @@ export default function Home() {
         onDeleteBrand={(id) => {
           deleteBrandProfile(id);
           setBrandVault(loadBrandVault());
+        }}
+        onBrandFileUpload={async (brandId, file) => {
+          // Upload file to extract text, then save to brand vault
+          const form = new FormData();
+          form.append("file", file);
+          try {
+            const res = await fetch("/api/upload", { method: "POST", body: form });
+            const data = await res.json();
+            if (data.error) {
+              console.error("Brand file upload error:", data.error);
+              return;
+            }
+            // Add file to brand profile
+            const profiles = loadBrandVault();
+            const idx = profiles.findIndex((p) => p.id === brandId);
+            if (idx >= 0) {
+              const brandFile: BrandFile = {
+                id: `bf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                name: data.filename || file.name,
+                uploadedAt: new Date().toISOString(),
+                text: data.text || "",
+                size: file.size,
+              };
+              if (!profiles[idx].files) profiles[idx].files = [];
+              profiles[idx].files!.push(brandFile);
+              profiles[idx].updatedAt = new Date().toISOString();
+              saveBrandVault(profiles);
+              setBrandVault([...profiles]);
+            }
+          } catch (err) {
+            console.error("Brand file upload failed:", err);
+          }
+        }}
+        onBrandFileRemove={(brandId, fileId) => {
+          const profiles = loadBrandVault();
+          const idx = profiles.findIndex((p) => p.id === brandId);
+          if (idx >= 0 && profiles[idx].files) {
+            profiles[idx].files = profiles[idx].files!.filter((f) => f.id !== fileId);
+            profiles[idx].updatedAt = new Date().toISOString();
+            saveBrandVault(profiles);
+            setBrandVault([...profiles]);
+          }
         }}
       />
 

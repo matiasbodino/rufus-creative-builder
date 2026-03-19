@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "rufus-case-builder",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3001
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "--turbopack", "--port", "3007"],
+      "port": 3007
     }
   ]
 }

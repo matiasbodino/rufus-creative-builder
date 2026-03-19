@@ -1,5 +1,13 @@
 // Brand Vault — persistent client context for better creative output
 
+export interface BrandFile {
+  id: string;
+  name: string;
+  uploadedAt: string;
+  text: string; // extracted text content
+  size: number; // original file size in bytes
+}
+
 export interface BrandProfile {
   id: string;
   clientName: string;
@@ -17,6 +25,10 @@ export interface BrandProfile {
   keyInsights?: string; // product insights, USPs
   // Creative assessment data
   creativeAssessment?: string; // full assessment output
+  // Custom context prompt — always injected when this brand is active
+  contextPrompt?: string;
+  // Uploaded files — text extracted and stored
+  files?: BrandFile[];
   // Free-form notes
   notes?: string;
 }
@@ -141,6 +153,20 @@ export function formatBrandContext(profile: BrandProfile): string {
   if (profile.pastCampaigns) sections.push(`**Campañas anteriores:**\n${profile.pastCampaigns}`);
   if (profile.creativeAssessment) sections.push(`**Creative Assessment:**\n${profile.creativeAssessment}`);
   if (profile.notes) sections.push(`**Notas:**\n${profile.notes}`);
+
+  // Inject custom context prompt
+  if (profile.contextPrompt) {
+    sections.push(`**Instrucciones específicas para esta marca:**\n${profile.contextPrompt}`);
+  }
+
+  // Inject uploaded file contents (truncated to avoid token overflow)
+  if (profile.files && profile.files.length > 0) {
+    const fileSection = profile.files.map((f) => {
+      const truncated = f.text.length > 3000 ? f.text.slice(0, 3000) + "\n...[truncado]" : f.text;
+      return `### Archivo: ${f.name}\n${truncated}`;
+    }).join("\n\n");
+    sections.push(`**Documentos de referencia (${profile.files.length} archivos):**\n\n${fileSection}`);
+  }
 
   return sections.join("\n\n");
 }

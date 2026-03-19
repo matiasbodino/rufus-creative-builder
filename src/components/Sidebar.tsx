@@ -25,6 +25,8 @@ export default function Sidebar({
   brandVault,
   onSaveBrand,
   onDeleteBrand,
+  onBrandFileUpload,
+  onBrandFileRemove,
 }: {
   conversations: Conversation[];
   activeId: string | null;
@@ -39,6 +41,8 @@ export default function Sidebar({
   brandVault: BrandProfile[];
   onSaveBrand: (profile: Partial<BrandProfile> & { clientName: string }) => void;
   onDeleteBrand: (id: string) => void;
+  onBrandFileUpload: (brandId: string, file: File) => void;
+  onBrandFileRemove: (brandId: string, fileId: string) => void;
 }) {
   const { starred, today, previous } = groupConversations(conversations);
   const [tab, setTab] = useState<Tab>("cases");
@@ -189,6 +193,8 @@ export default function Sidebar({
               brands={brandVault}
               onSave={onSaveBrand}
               onDelete={onDeleteBrand}
+              onFileUpload={onBrandFileUpload}
+              onFileRemove={onBrandFileRemove}
             />
           )}
         </div>
