@@ -1,5 +1,9 @@
 import { RefObject } from "react";
 import EmptyState from "./EmptyState";
+import ThinkingIndicator from "./ThinkingIndicator";
+import MessageFeedback from "./MessageFeedback";
+import QuickActions from "./QuickActions";
+import { detectQuickActions } from "@/lib/quick-actions";
 
 interface FileDownload {
   url: string;
@@ -20,13 +24,25 @@ export default function ChatMessages({
   messagesEndRef,
   inputRef,
   onSuggestion,
+  onQuickAction,
+  conversationId,
 }: {
   messages: Message[];
   loading: boolean;
   messagesEndRef: RefObject<HTMLDivElement | null>;
   inputRef: RefObject<HTMLTextAreaElement | null>;
   onSuggestion: (text: string) => void;
+  onQuickAction: (text: string) => void;
+  conversationId: string | null;
 }) {
+  // Find the index of the last assistant message
+  const lastAssistantIdx = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") return i;
+    }
+    return -1;
+  })();
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
@@ -57,13 +73,9 @@ export default function ChatMessages({
                         <div className="whitespace-pre-wrap text-sm leading-relaxed">
                           {msg.attachment
                             ? (() => {
-                                // Extract only the user's typed text (after the file content)
                                 const parts = msg.content.split(`[Archivo adjunto: ${msg.attachment}]`);
                                 if (parts.length > 1) {
-                                  // The user text is the last part after file content
                                   const fileAndUserText = parts[1];
-                                  // Find the user's text: it's after the extracted file content
-                                  // Format: \n\n{file content}\n\n{user text}
                                   const lastDoubleNewline = fileAndUserText.lastIndexOf("\n\n");
                                   if (lastDoubleNewline > 0) {
                                     const userText = fileAndUserText.slice(lastDoubleNewline + 2).trim();
@@ -125,6 +137,19 @@ export default function ChatMessages({
                               Descargar caso (.pptx)
                             </a>
                           ) : null}
+
+                          {/* Quick actions — only on last assistant message, not loading */}
+                          {i === lastAssistantIdx && !loading && (
+                            <QuickActions
+                              actions={detectQuickActions(msg.content)}
+                              onAction={onQuickAction}
+                            />
+                          )}
+
+                          {/* Feedback */}
+                          {conversationId && (
+                            <MessageFeedback messageKey={`${conversationId}-${i}`} />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -134,20 +159,7 @@ export default function ChatMessages({
             ))}
 
             {/* Loading indicator */}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[var(--accent)] flex items-center justify-center">
-                    <span className="text-white font-bold text-[10px]">R</span>
-                  </div>
-                  <div className="flex gap-1 pt-2.5">
-                    <div className="w-1.5 h-1.5 bg-[var(--text-faint)] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <div className="w-1.5 h-1.5 bg-[var(--text-faint)] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <div className="w-1.5 h-1.5 bg-[var(--text-faint)] rounded-full animate-bounce" />
-                  </div>
-                </div>
-              </div>
-            )}
+            {loading && <ThinkingIndicator messages={messages} />}
           </div>
         )}
 

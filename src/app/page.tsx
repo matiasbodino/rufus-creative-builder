@@ -284,6 +284,15 @@ export default function Home() {
           messagesEndRef={messagesEndRef}
           inputRef={inputRef}
           onSuggestion={(text) => setInput(text)}
+          onQuickAction={(text) => {
+            setInput(text);
+            // Auto-submit after a tick so the input state updates
+            setTimeout(() => {
+              const form = document.querySelector("form");
+              if (form) form.requestSubmit();
+            }, 50);
+          }}
+          conversationId={activeId}
         />
 
         <ChatInput
