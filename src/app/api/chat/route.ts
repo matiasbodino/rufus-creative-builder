@@ -60,11 +60,31 @@ interface FileResult {
 
 async function handleToolUse(
   toolBlock: Anthropic.ContentBlock & { type: "tool_use"; name: string; id: string; input: unknown },
-): Promise<{ text: string; files: FileResult[] }> {
+): Promise<{ text: string; files: FileResult[]; brandUpdate?: Record<string, string> }> {
   const files: FileResult[] = [];
   let summaryText = "";
 
-  if (toolBlock.name === "generate_case") {
+  if (toolBlock.name === "save_brand_context") {
+    const input = toolBlock.input as Record<string, string>;
+    // Return the brand data to the client for localStorage persistence
+    summaryText = `✅ Brand Vault actualizado para **${input.client_name}**. La próxima vez que trabajes con esta marca, voy a tener todo este contexto cargado automáticamente.`;
+    return {
+      text: summaryText,
+      files,
+      brandUpdate: {
+        clientName: input.client_name,
+        category: input.category,
+        targetMarket: input.target_market,
+        brandVoice: input.brand_voice,
+        audiences: input.audiences,
+        keyInsights: input.key_insights,
+        competitiveContext: input.competitive_context,
+        brandGuidelines: input.brand_guidelines,
+        pastCampaigns: input.past_campaigns,
+        notes: input.notes,
+      },
+    };
+  } else if (toolBlock.name === "generate_case") {
     const caseData = toolBlock.input as unknown as CaseData;
     const buffer = await generateCase(caseData);
     const slug = makeSlug(caseData.client_name);
@@ -121,7 +141,7 @@ async function handleToolUse(
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { messages, brandContext } = await req.json();
 
     // Sanitize messages for Claude API
     const sanitized: { role: "user" | "assistant"; content: string }[] = [];
@@ -141,10 +161,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No se recibió ningún mensaje. Escribí algo para empezar." });
     }
 
+    // Inject Brand Vault context into system prompt
+    let systemPrompt = SYSTEM_PROMPT;
+    if (brandContext) {
+      systemPrompt += `\n\n---\n\n# BRAND VAULT — CONTEXTO ESPECÍFICO DEL CLIENTE\n\nTenés acceso al Brand Vault de este cliente. USÁ ESTA INFORMACIÓN para fundamentar cada decisión creativa. No repitas datos genéricos cuando tenés data específica.\n\n${brandContext}\n\n**INSTRUCCIONES BRAND VAULT:**\n- Usá la voz de marca documentada, no inventes un tono genérico.\n- Si hay audiencias/avatars guardados, partí de ahí. No arranques de cero.\n- Si hay campañas anteriores, referenciá lo que funcionó.\n- Si hay guidelines, respetá los DO/DON'T.\n- Si hay insights, usá esos como base del concepto.\n- Siempre que generes contenido, explicá cómo se conecta con el contexto guardado.`;
+    } else {
+      systemPrompt += `\n\n---\n\n# PRE-FLIGHT CHECKLIST — CONTEXTO DE MARCA\n\nNo hay Brand Vault guardado para este cliente. Antes de generar cualquier entregable creativo (ads, guiones, briefs, contenido), hacé estas 5 preguntas para construir contexto:\n\n1. **Voz de marca:** ¿Cómo habla esta marca? (formal / informal / irreverente / técnica / empoderador)\n2. **Campañas anteriores:** ¿Qué funcionó antes? (formato, mensaje, plataforma) ¿Qué no?\n3. **Competencia:** ¿Quiénes son los competidores directos? ¿Qué están haciendo?\n4. **Restricciones:** ¿Hay algo que NO se puede decir o hacer?\n5. **Insight central:** ¿Cuál es el insight clave del producto/servicio?\n\nPodés hacer estas preguntas durante el INTAKE, integradas naturalmente en la conversación. NO las hagas todas juntas como un formulario. Intercalalas con el flujo.\n\nCuando el usuario responda, mencioná que estás guardando esa info en el Brand Vault para futuras sesiones.\n\n**IMPORTANTE:** Si el usuario te da contexto suficiente en su primer mensaje (brief completo, assessment previo, docs adjuntos), NO necesitás hacer el pre-flight completo. Usá tu criterio para determinar qué ya sabés y qué falta.`;
+    }
+
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       tools: TOOLS as Anthropic.Tool[],
       messages: sanitized,
     });
@@ -159,7 +187,8 @@ export async function POST(req: Request) {
       if (
         toolBlock &&
         (toolBlock.name === "generate_case" ||
-          toolBlock.name === "generate_deliverable")
+          toolBlock.name === "generate_deliverable" ||
+          toolBlock.name === "save_brand_context")
       ) {
         // Get any text Claude wrote before calling the tool
         const preToolText = response.content
@@ -185,6 +214,7 @@ export async function POST(req: Request) {
             label: f.label,
             mimeType: f.mimeType,
           })),
+          brandUpdate: result.brandUpdate || undefined,
         });
       }
     }

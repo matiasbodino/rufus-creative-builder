@@ -1137,4 +1137,55 @@ export const TOOLS: Anthropic.Tool[] = [
       ],
     },
   },
+  {
+    name: "save_brand_context",
+    description:
+      "Guarda contexto de marca en el Brand Vault para futuras sesiones. Usá esta herramienta cuando hayas recopilado información relevante sobre la marca del cliente durante la conversación (voz de marca, audiencias, insights, competencia, guidelines, etc.). El Brand Vault se persiste y se carga automáticamente en futuras sesiones con el mismo cliente.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        client_name: {
+          type: "string",
+          description: "Nombre del cliente/marca",
+        },
+        category: {
+          type: "string",
+          description: "Categoría de la marca (fintech, FMCG, tech, fashion, F&B, etc.)",
+        },
+        target_market: {
+          type: "string",
+          description: "Mercado principal (Argentina, México, LATAM, etc.)",
+        },
+        brand_voice: {
+          type: "string",
+          description: "Descripción de la voz de marca",
+        },
+        audiences: {
+          type: "string",
+          description: "Descripción de audiencias/avatars target",
+        },
+        key_insights: {
+          type: "string",
+          description: "Insights clave del producto/servicio",
+        },
+        competitive_context: {
+          type: "string",
+          description: "Competidores directos y contexto competitivo",
+        },
+        brand_guidelines: {
+          type: "string",
+          description: "Guidelines de marca, DO/DON'T, restricciones",
+        },
+        past_campaigns: {
+          type: "string",
+          description: "Campañas anteriores relevantes, qué funcionó y qué no",
+        },
+        notes: {
+          type: "string",
+          description: "Notas adicionales relevantes",
+        },
+      },
+      required: ["client_name"],
+    },
+  },
 ];

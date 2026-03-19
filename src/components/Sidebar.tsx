@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { Conversation, groupConversations } from "@/lib/conversations";
 import { DeliverableRecord } from "@/lib/deliverables";
+import { BrandProfile } from "@/lib/brand-vault";
 import SidebarSection from "./SidebarSection";
 import ConversationItem from "./ConversationItem";
 import DeliverableLibrary from "./DeliverableLibrary";
+import BrandVaultPanel from "./BrandVaultPanel";
 
-type Tab = "cases" | "library";
+type Tab = "cases" | "library" | "brands";
 
 export default function Sidebar({
   conversations,
@@ -20,6 +22,9 @@ export default function Sidebar({
   sidebarOpen,
   setSidebarOpen,
   deliverables,
+  brandVault,
+  onSaveBrand,
+  onDeleteBrand,
 }: {
   conversations: Conversation[];
   activeId: string | null;
@@ -31,6 +36,9 @@ export default function Sidebar({
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   deliverables: DeliverableRecord[];
+  brandVault: BrandProfile[];
+  onSaveBrand: (profile: Partial<BrandProfile> & { clientName: string }) => void;
+  onDeleteBrand: (id: string) => void;
 }) {
   const { starred, today, previous } = groupConversations(conversations);
   const [tab, setTab] = useState<Tab>("cases");
@@ -117,6 +125,25 @@ export default function Sidebar({
               </span>
             )}
           </button>
+          <button
+            onClick={() => setTab("brands")}
+            className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+              tab === "brands"
+                ? "bg-[var(--bg-surface)] text-[var(--text-primary)]"
+                : "text-[var(--text-faint)] hover:text-[var(--text-muted)]"
+            }`}
+          >
+            Marcas
+            {brandVault.length > 0 && (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                tab === "brands"
+                  ? "bg-[var(--accent)] text-white"
+                  : "bg-[var(--bg-surface-hover)] text-[var(--text-faint)]"
+              }`}>
+                {brandVault.length}
+              </span>
+            )}
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 pb-4">
@@ -149,13 +176,19 @@ export default function Sidebar({
                 </p>
               )}
             </>
-          ) : (
+          ) : tab === "library" ? (
             <DeliverableLibrary
               deliverables={deliverables}
               onGoToConversation={(id) => {
                 onSelect(id);
                 setTab("cases");
               }}
+            />
+          ) : (
+            <BrandVaultPanel
+              brands={brandVault}
+              onSave={onSaveBrand}
+              onDelete={onDeleteBrand}
             />
           )}
         </div>

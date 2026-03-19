@@ -14,6 +14,15 @@ import {
 } from "@/lib/conversations";
 import { loadTheme, saveTheme } from "@/lib/theme";
 import { DeliverableRecord, loadDeliverables, saveDeliverable } from "@/lib/deliverables";
+import {
+  BrandProfile,
+  loadBrandVault,
+  detectClientName,
+  getBrandProfile,
+  formatBrandContext,
+  upsertBrandProfile,
+  deleteBrandProfile,
+} from "@/lib/brand-vault";
 
 interface AttachedFile {
   name: string;
@@ -33,6 +42,8 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [deliverables, setDeliverables] = useState<DeliverableRecord[]>([]);
+  const [brandVault, setBrandVault] = useState<BrandProfile[]>([]);
+  const [activeBrand, setActiveBrand] = useState<BrandProfile | null>(null);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +56,7 @@ export default function Home() {
     document.documentElement.setAttribute("data-theme", t);
     setConversations(loadConversations());
     setDeliverables(loadDeliverables());
+    setBrandVault(loadBrandVault());
   }, []);
 
   // Scroll on new messages
@@ -202,13 +214,24 @@ export default function Home() {
     }
 
     try {
+      // Detect client name and load Brand Vault context
+      const detectedClient = detectClientName(apiMessages);
+      let brandContext: string | null = null;
+      if (detectedClient) {
+        const profile = getBrandProfile(detectedClient);
+        if (profile) {
+          setActiveBrand(profile);
+          brandContext = formatBrandContext(profile);
+        }
+      }
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
 
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ messages: apiMessages, brandContext }),
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -252,6 +275,13 @@ export default function Home() {
           // Legacy format (url string)
           return { url: f.url || "", label: f.label };
         });
+      }
+
+      // Handle brand vault updates from save_brand_context tool
+      if (data.brandUpdate) {
+        upsertBrandProfile(data.brandUpdate);
+        setBrandVault(loadBrandVault());
+        setActiveBrand(getBrandProfile(data.brandUpdate.clientName));
       }
 
       const assistantMsg: (typeof messages)[number] = {
@@ -313,6 +343,15 @@ export default function Home() {
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         deliverables={deliverables}
+        brandVault={brandVault}
+        onSaveBrand={(profile) => {
+          upsertBrandProfile(profile);
+          setBrandVault(loadBrandVault());
+        }}
+        onDeleteBrand={(id) => {
+          deleteBrandProfile(id);
+          setBrandVault(loadBrandVault());
+        }}
       />
 
       <main className="flex-1 flex flex-col min-w-0">
